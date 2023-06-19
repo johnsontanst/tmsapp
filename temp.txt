@@ -1,0 +1,28 @@
+const {conn} = require('./repository/dbConnection');
+const {create_user_table_query, alter_user_table_query, create_group_table_query, create_accountGroupRelation_table_query} = require('./repository/dbQueries');
+
+conn.execute(create_user_table_query, (err)=>{
+    if(err) throw err;
+    console.log("User table created");
+})
+conn.execute(create_group_table_query, (err)=>{
+    if(err) throw err;
+    console.log("group table created");
+})
+conn.execute(create_accountGroupRelation_table_query, (err)=>{
+    if(err) throw err;
+    console.log("accountGroupRelation table created");
+})
+
+
+CREATE TABLE IF NOT EXISTS nodelogin.accounts (id int(11) NOT NULL, username varchar(50) NOT NULL, password varchar(255) NOT NULL, email varchar(100) NOT NULL) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+
+//Create application table
+CREATE TABLE IF NOT EXISTS nodelogin.application (App_Acronym VARCHAR(200) PRIMARY KEY NOT NULL UNIQUE, App_Description LONG, App_Rnumber INT, App_startDate DATE, App_endDate DATE,  App_permit_Open VARCHAR(150), App_permit_toDoList VARCHAR(150), App_permit_Doing VARCHAR(150), App_permit_Done VARCHAR(150));
+
+//Create plan table
+CREATE TABLE IF NOT EXISTS nodelogin.Plan (Plan_MVP_name VARCHAR(200) UNIQUE PRIMARY KEY NOT NULL, Plan_startDate DATE, Plan_endDAte DATE, fk_application_app_acronym VARCHAR(200), FOREIGN KEY(fk_application_app_acronym) REFERENCES nodelogin.application (App_Acronym));
+
+//Create task table
+CREATE TABLE IF NOT EXISTS nodelogin.Task (Task_name VARCHAR(200) PRIMARY KEY NOT NULL UNIQUE, Task_description LONG, Task_notes LONG, Task_id LONG, Task_plan VARCHAR(200), Task_app_Acronym VARCHAR(200), Task_state VARCHAR(200), Task_creator VARCHAR(200), Task_owner VARCHAR(200), Task_createDate DATE, FOREIGN KEY(Task_plan) REFERENCES nodelogin.plan (Plan_MVP_name), FOREIGN KEY(Task_app_Acronym) REFERENCES nodelogin.application (App_Acronym));
+
