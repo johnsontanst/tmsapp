@@ -17,8 +17,37 @@ conn.execute(create_accountGroupRelation_table_query, (err)=>{
 
 CREATE TABLE IF NOT EXISTS nodelogin.accounts (id int(11) NOT NULL, username varchar(50) NOT NULL, password varchar(255) NOT NULL, email varchar(100) NOT NULL) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 
+//Create account table
+CREATE TABLE `accounts` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=103 DEFAULT CHARSET=utf8mb3
+
+//Create accGroup table
+CREATE TABLE `accGroups` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `groupName` varchar(255) NOT NULL,
+  `createAt` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+
+//Create accountGroupRelation table
+CREATE TABLE `accountGroupRelation` (
+  `accountId` int NOT NULL,
+  `accGroupId` int NOT NULL,
+  KEY `accountId` (`accountId`),
+  KEY `accGroupId` (`accGroupId`),
+  CONSTRAINT `accountgrouprelation_ibfk_1` FOREIGN KEY (`accountId`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `accountgrouprelation_ibfk_2` FOREIGN KEY (`accGroupId`) REFERENCES `accGroups` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
 //Create application table
-CREATE TABLE IF NOT EXISTS nodelogin.application (App_Acronym VARCHAR(200) PRIMARY KEY NOT NULL UNIQUE, App_Description LONG, App_Rnumber INT, App_startDate DATE, App_endDate DATE,  App_permit_Open VARCHAR(150), App_permit_toDoList VARCHAR(150), App_permit_Doing VARCHAR(150), App_permit_Done VARCHAR(150));
+CREATE TABLE IF NOT EXISTS application (App_Acronym VARCHAR(200) PRIMARY KEY NOT NULL UNIQUE, App_Description LONG, App_Rnumber INT, App_startDate DATE, App_endDate DATE,  App_permit_Open INT, App_permit_toDoList INT, App_permit_Doing INT, App_permit_Done INT, FOREIGN KEY(App_permit_Open) REFERENCES `accGroups` (`id`), FOREIGN KEY(App_permit_toDoList) REFERENCES `accGroups` (`id`), FOREIGN KEY(App_permit_Doing) REFERENCES `accGroups` (`id`), FOREIGN KEY(App_permit_Done) REFERENCES `accGroups` (`id`));
+
 
 //Create plan table
 CREATE TABLE IF NOT EXISTS nodelogin.Plan (Plan_MVP_name VARCHAR(200) UNIQUE PRIMARY KEY NOT NULL, Plan_startDate DATE, Plan_endDAte DATE, fk_application_app_acronym VARCHAR(200), FOREIGN KEY(fk_application_app_acronym) REFERENCES nodelogin.application (App_Acronym));
