@@ -20,5 +20,8 @@
     "jsonwebtoken": "^9.0.0",
     "mysql2": "^3.3.4",
     "nodemon": "^2.0.22"
+  },
+  "dependencies": {
+    "cors": "^2.8.5"
   }
 }

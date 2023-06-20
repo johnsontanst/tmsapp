@@ -9,9 +9,6 @@ const {
     get_account_by_id_query,
     } = require('./dbQueries');
 
-//Import entities
-const User = require('../entity/user_model');
-
 //Validation
 const {userValidation} = require('../utils/userValidation');
 
@@ -24,8 +21,7 @@ class accountRepository{
         return new Promise((resolve, reject)=>{
             conn.execute(create_account_query, [username, password, email], (err)=>{
                 if(err) reject(err);
-                const user = new User(username, email);
-                resolve(user);
+                resolve(true);
             })
         })
     }
@@ -48,14 +44,6 @@ class accountRepository{
         });
     }
 
-    static getAccountById(accountId){
-        return new Promise((resolve, reject)=>{
-            conn.execute(get_account_by_id_query, [accountId], (err, data)=>{
-                if(err) throw err;
-                resolve(data);
-            })
-        })
-    }
 }
 
 module.exports = accountRepository;

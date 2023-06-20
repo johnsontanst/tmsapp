@@ -1,5 +1,3 @@
-//Import User entity
-const User = require('../entity/user_model');
 
 
 function userValidation(User){

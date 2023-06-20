@@ -29,7 +29,6 @@ exports.newAccountC = CatchAsyncError( async (req, res, next)=>{
     else{
         try{
             const user = await AccountRepository.newAccount(req.body.username, await passwordEncryption(req.body.password), req.body.email);
-
             if(user){
                 req.session.testing = 2;
                 return res.status(200).json({
