@@ -23,7 +23,7 @@ class accountRepository{
     static newAccount(username, password, email){
         return new Promise((resolve, reject)=>{
             conn.execute(create_account_query, [username, password, email], (err)=>{
-                if(err) throw err;
+                if(err) reject(err);
                 const user = new User(username, email);
                 resolve(user);
             })
@@ -33,7 +33,7 @@ class accountRepository{
     static getAccountByUsername(username){
         return new Promise((resolve, reject)=>{
             conn.execute(get_account_by_username_query, [username], (err,data)=>{
-                if(err) throw err;
+                if(err) reject(err);
                 resolve(data);
             });
         }); 

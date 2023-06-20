@@ -6,9 +6,6 @@ const app = express();
 const dotenv = require('dotenv');
 dotenv.config({path: './config/config.env'}); 
 
-//use express json for req body 
-app.use(express.json());
-
 //Import routes 
 const newRoutes = require('./routes/routes');
 
@@ -18,6 +15,9 @@ app.use(expressSession({secret:process.env.COOKIE_SECRET_KEY, resave:false, save
     httpOnly:true,
     maxAge:parseInt(process.env.COOKIE_EXPIRES_IN) 
 }}));
+
+//use express json for req body 
+app.use(express.json());
 
 //Routing
 app.use(newRoutes);

@@ -19,13 +19,13 @@ var get_account_by_id_query = "SELECT * FROM accounts where id=?;"
 
 
 //Group queries
-var create_group_query = "INSERT INTO accGroups (groupName, createAt) VALUES(?,?);"
+var create_group_query = "INSERT INTO accGroups (groupName) VALUES(?);"
 
 var get_group_by_groupName = "SELECT * FROM accGroups WHERE groupName=?;"
 
-var add_user_into_group_query = "INSERT INTO accountGroupRelation (accountId, accGroupId) VALUES(?,?);"
+var add_user_into_group_query = "INSERT INTO accountGroupRelation (fk_username, fk_groupName) VALUES(?,?);"
 
-var get_all_group_by_account_id_query = "SELECT accGroups.groupName FROM accGroups JOIN accountGroupRelation ON accGroups.id = accountGroupRelation.accGroupId WHERE accountGroupRelation.accountId = ?;"
+var get_all_group_by_account_groupName_query = "SELECT accGroups.groupName FROM accGroups JOIN accountGroupRelation ON accGroups.groupName = accountGroupRelation.groupName WHERE accountGroupRelation.groupName = ?;"
 
 var get_all_groups_query = "SELECT * FROM accGroups;"
 
@@ -43,7 +43,7 @@ module.exports = {
     "create_group_query" : create_group_query,
     "add_user_into_group_query" : add_user_into_group_query,
     "get_group_by_groupName" : get_group_by_groupName,
-    "get_all_group_by_account_id_query" : get_all_group_by_account_id_query,
+    "get_all_group_by_account_groupName_query" : get_all_group_by_account_groupName_query,
     "get_all_groups_query" : get_all_groups_query,
     "get_all_account_by_group_id_query" : get_all_account_by_group_id_query,
 

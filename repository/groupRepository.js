@@ -22,16 +22,16 @@ class groupRepository{
 
     static newGroup(groupName){
         return new Promise(async (resolve, reject)=>{
-            conn.execute(create_group_query, [groupName, await datetimeToMysql()], (err)=>{
+            conn.execute(create_group_query, [groupName], (err)=>{
                 if (err) reject(err);
                 resolve(true);
             })
         })
     };
 
-    static addAccountToGroup(accountId, groupId){
+    static addAccountToGroup(username, groupName){
         return new Promise((resolve, reject)=>{
-            conn.execute(add_user_into_group_query, [accountId, groupId], (err)=>{
+            conn.execute(add_user_into_group_query, [username, groupName], (err)=>{
                 if (err) reject(err);
                 resolve(true);
             })

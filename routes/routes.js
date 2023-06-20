@@ -9,6 +9,8 @@ const {
     temprotected,
     newGroupC,
     addUserToGroupC,
+    welcome,
+    logoutC,
 
     } = require('../controller/accountController');
 
@@ -29,7 +31,13 @@ router.route('/register/group').post(newGroupC);
 //ROUTE: Add user into group
 router.route('/add/usertogroup').post(addUserToGroupC);
 
-router.route('/temp').post(loginAuthentication, checkGroup('admin'), temprotected);
+//ROUTE: Logout user
+router.route('/logout').post(logoutC);
+
+
+//Test route
+router.route('/temp').post(loginAuthentication, checkGroup('projectLeader'), temprotected);
+router.route('/').get(welcome);
 
 
 module.exports = router
