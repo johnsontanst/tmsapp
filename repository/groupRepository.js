@@ -13,8 +13,6 @@ const {
     get_all_account_by_group_id_query,
     } = require('./dbQueries');
 
-//Validation
-const {userValidation} = require('../utils/userValidation');
 
 class groupRepository{
 

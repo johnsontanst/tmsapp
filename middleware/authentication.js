@@ -10,9 +10,6 @@ const jwt = require('jsonwebtoken');
 //Import account reppository
 const AccountRepository = require('../repository/accountRepository');
 
-//Import user validation
-const {userValidation} = require('../utils/userValidation');
-
 
 exports.loginAuthentication = CatchAsyncError(async (req,res,next)=>{
     let token = req.session.authToken;

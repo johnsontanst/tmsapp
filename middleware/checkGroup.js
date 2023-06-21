@@ -11,9 +11,6 @@ const jwt = require('jsonwebtoken');
 const AccountRepository = require('../repository/accountRepository');
 const GroupRepository = require('../repository/groupRepository');
 
-//Import user validation
-const {userValidation} = require('../utils/userValidation');
-
 
 exports.checkGroup = (...groups)=>{
     return async (req,res,next)=>{
