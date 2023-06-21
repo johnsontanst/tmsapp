@@ -3,7 +3,10 @@ const AccountRepository = require('../repository/accountRepository');
 const GroupRepository = require('../repository/groupRepository');
 
 //Import JWT
-const {generateJWT} = require('../utils/jwtUtils');
+const {generateJWT, checkGroup} = require('../utils/jwtUtils');
+
+//Import JWT token
+const jwt = require('jsonwebtoken')
 
 //Import catch Async error & error handler
 const ErrorHandler = require('../utils/errorHandler');
@@ -11,6 +14,7 @@ const CatchAsyncError = require('../middleware/catchAsyncError');
 
 //Import validation
 const {passwordEncryption, passwordValidation} = require('../utils/passwordUtils');
+const catchAsyncError = require('../middleware/catchAsyncError');
 
 //POST : create new account || URL : /register
 exports.newAccountC = CatchAsyncError( async (req, res, next)=>{
@@ -65,28 +69,36 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
             });
         }
 
-    //password validation
-    if(await passwordValidation(req.body.password, returnUser[0].password)){
-        //Generate token
-        const token = await generateJWT(returnUser[0].username);
-        //Get group 
-        const groups = await GroupRepository.getAllGroupNameByUsername(returnUser[0].username);
-        //Set token in session
-        req.session.authToken = token
+        //Check status 
+        if(!returnUser[0].status == 1){
+            res.status(403).send({
+                success:false,
+                message:"Account suspended, please contact the admin"
+            });
+        }
 
-        return res.status(200).send({
-            success:true,
-            username: returnUser[0].username,
-            group: groups[0].groupName,
-            token: req.session.authToken
-        });
-    }
-    else{
-        return res.status(403).json({
-            success:false,
-            message:"Invalid password"
-        });
-    }
+        //password validation
+        if(await passwordValidation(req.body.password, returnUser[0].password)){
+            //Generate token
+            const token = await generateJWT(returnUser[0].username);
+            //Get group 
+            const groups = await GroupRepository.getAllGroupNameByUsername(returnUser[0].username);
+            //Set token in session
+            req.session.authToken = token
+
+            return res.status(200).send({
+                success:true,
+                username: returnUser[0].username,
+                group: groups,
+                token: req.session.authToken
+            });
+        }
+        else{
+            return res.status(403).json({
+                success:false,
+                message:"Invalid password"
+            });
+        }
     }
     catch(err){
         return res.status(500).json({
@@ -154,30 +166,65 @@ exports.logoutC = async(req, res,next)=>{
                 delete req.session[k];
             }
         }
-        res.status(200).send({
+        return res.status(200).send({
             success:true,
             message:"logout success"
         });
     }
     else{
-        res.status(500).send({
+        return res.status(500).send({
             success:false,
             message:"Fail to logout"
         });
     }
 }
 
-//POST : auth token check roles || URL : /logout
+//POST : auth token check roles || URL : /authtoken/checkrole
 exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
+    
+    //Check if current user is authorized 
+    const u = jwt.verify(req.body.authTokenC, process.env.SECRET_KEY);
 
-    if(!req.body.authToken){
-        res.status(403).send({
+    if(u.username != req.body.username){
+        return res.status(403).send({
             success:false
         });
     }
-    
-    //Decode auth token and retrieve user groups
+
+    if(u){
+        const isUserInGroup = await checkGroup(u.username, req.body.groupName);
+
+        if(isUserInGroup){
+
+            return res.status(200).send({
+                success:true
+            });
+        }
+    }
+
+    return res.status(403).send({
+        success:false
+    });
 });
+
+
+//POST : get all users || URL : /allusers
+exports.allUsersC = catchAsyncError(async(req, res, next)=>{
+    //Query DB for all users
+    const allUsers = await AccountRepository.getAllUsers();
+    if(allUsers){
+        return res.status(200).send({
+            success:true,
+            users: allUsers
+        });
+    }
+    else{
+        return res.status(500).send({
+            success:false
+        });
+    }
+})
+
 
 
 exports.temprotected = async (req,res,next)=>{

@@ -20,7 +20,7 @@ exports.checkGroup = (...groups)=>{
             const c = jwt.verify(token, process.env.SECRET_KEY);
 
             //Get user by id
-            const returnUser = await AccountRepository.getAccountByUsername(decoded_username.username);
+            const returnUser = await AccountRepository.getAccountByUsername(c.username);
             if(returnUser[0]){
                 //Get all groups by the account username
                 const userAllGroups = await GroupRepository.getAllGroupNameByUsername(returnUser[0].username);

@@ -6,7 +6,7 @@ const {
     create_account_query,
     get_account_by_email_query,
     get_account_by_username_query,
-    get_account_by_id_query,
+    get_all_users_query,
     } = require('./dbQueries');
 
 
@@ -33,9 +33,18 @@ class accountRepository{
     static getAccountByEmail(email){
         return new Promise((resolve,reject)=>{
             conn.execute(get_account_by_email_query, [email], (err, data)=>{
-                if(err) throw err;
+                if(err) reject(err);
                 resolve(data);
             });
+        });
+    }
+
+    static getAllUsers(){
+        return new Promise((resolve, reject)=>{
+            conn.execute(get_all_users_query, (err, data)=>{
+                if (err) reject(err);
+                resolve(data);
+            })
         });
     }
 

@@ -15,6 +15,7 @@ var get_account_by_email_query = "SELECT * FROM accounts where email=?;"
 
 var get_account_by_username_query = "SELECT * FROM accounts where username=?;"
 
+var get_all_users_query = "SELECT accounts.*, accountsGroup.fk_groupName from accounts JOIN accountsGroup ON accounts.username = accountsGroup.fk_username;"
 
 //Group queries
 var create_group_query = "INSERT INTO accGroups (groupName) VALUES(?);"
@@ -49,5 +50,6 @@ module.exports = {
     "get_all_username_by_application_open_query" : get_all_username_by_application_open_query,
     "get_all_account_by_groupName_query" : get_all_account_by_groupName_query,
     "get_all_username_by_application_todo_query" : get_all_username_by_application_todo_query,
+    "get_all_users_query" : get_all_users_query,
 
 }

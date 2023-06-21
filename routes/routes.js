@@ -11,6 +11,8 @@ const {
     addUserToGroupC,
     welcome,
     logoutC,
+    authTokenCheckRole,
+    allUsersC,
 
     } = require('../controller/accountController');
 
@@ -22,23 +24,26 @@ const {checkGroup} = require('../middleware/checkGroup');
 //ROUTE: Register new account
 router.route('/register').post(newAccountC);
 
-//ROUTE: Login
-router.route('/login').post(loginC);
-
 //ROUTE: Register new group
 router.route('/register/group').post(newGroupC);
 
-//ROUTE: Add user into group
-router.route('/add/usertogroup').post(addUserToGroupC);
+//ROUTE: Login
+router.route('/login').post(loginC);
 
 //ROUTE: Logout user
 router.route('/logout').post(logoutC);
 
+//ROUTE: Add user into group
+router.route('/add/usertogroup').post(addUserToGroupC);
+
 //ROUTE: auth token check role
-router.route('/authtoken/checkrole').post()
+router.route('/authtoken/checkrole').post(authTokenCheckRole)
+
+//ROUTE: auth get all users
+router.route('/allusers').post(loginAuthentication, checkGroup('admin'),allUsersC)
 
 //Test route
-router.route('/temp').post(loginAuthentication, checkGroup('projectLeader'), temprotected);
+router.route('/temp').post(loginAuthentication, temprotected);
 router.route('/').get(welcome);
 
 
