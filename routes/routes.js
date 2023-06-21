@@ -34,6 +34,8 @@ router.route('/add/usertogroup').post(addUserToGroupC);
 //ROUTE: Logout user
 router.route('/logout').post(logoutC);
 
+//ROUTE: auth token check role
+router.route('/authtoken/checkrole').post()
 
 //Test route
 router.route('/temp').post(loginAuthentication, checkGroup('projectLeader'), temprotected);

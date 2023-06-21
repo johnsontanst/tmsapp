@@ -1,7 +1,7 @@
 const mysql = require('mysql2')
 
 //export conn 
-exports.conn = mysql.createPool({
+ exports.conn = mysql.createPool({
     host:'localhost',
     user: 'root',
     password : 'password',

@@ -32,15 +32,23 @@ CREATE TABLE `accGroups` (
 
 
 //Create accountGroupRelation table
-CREATE TABLE `accountGroupRelation` (
+CREATE TABLE `accountsGroup` (
   `fk_username` varchar(100) NOT NULL,
   `fk_groupName` varchar(100) NOT NULL,
   FOREIGN KEY (`fk_username`) REFERENCES `accounts` (`username`),
-  FOREIGN KEY (`fk_groupName`) REFERENCES `accgroups` (`groupName`)
+  FOREIGN KEY (`fk_groupName`) REFERENCES `accGroups` (`groupName`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+//Create accountApplication table (KIV)
+CREATE TABLE `accountApplication`(
+   `fk_username` varchar(50) NOT NULL,
+   `fk_App_Acronym` varchar(200) NOT NULL
+   FOREIGN KEY (`fk_username`) REFERENCES `accounts` (`username`),
+   FOREIGN KEY (`fk_App_Acronym`) REFERENCES `application` (App_Acronym)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 //Create application table
-CREATE TABLE IF NOT EXISTS application (App_Acronym VARCHAR(200) PRIMARY KEY NOT NULL UNIQUE, App_Description LONG, App_Rnumber INT, App_startDate DATE, App_endDate DATE,  App_permit_Open varchar(100), App_permit_toDoList varchar(100), App_permit_Doing varchar(100), App_permit_Done varchar(100), FOREIGN KEY(App_permit_Open) REFERENCES `accGroups` (`groupName`), FOREIGN KEY(App_permit_toDoList) REFERENCES `accGroups` (`groupName`), FOREIGN KEY(App_permit_Doing) REFERENCES `accGroups` (`groupName`), FOREIGN KEY(App_permit_Done) REFERENCES `accGroups` (`groupName`));
+CREATE TABLE IF NOT EXISTS application (App_Acronym VARCHAR(200) PRIMARY KEY NOT NULL UNIQUE, App_Description LONG, App_Rnumber INT, App_startDate DATE, App_endDate DATE,  App_permit_Open VARCHAR(255), App_permit_toDoList VARCHAR(255), App_permit_Doing VARCHAR(255), App_permit_Done VARCHAR(255), FOREIGN KEY(`App_permit_Open`) REFERENCES `accgroups` (`groupName`), FOREIGN KEY(`App_permit_toDoList`) REFERENCES `accgroups` (`groupName`), FOREIGN KEY(`App_permit_Doing`) REFERENCES `accgroups` (`groupName`), FOREIGN KEY(`App_permit_Done`) REFERENCES `accgroups` (`groupName`));
 
 
 //Create plan table

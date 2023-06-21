@@ -39,14 +39,6 @@ class accountRepository{
         });
     }
 
-    static getAccountById(accountId){
-        return new Promise((resolve, reject)=>{
-            conn.execute(get_account_by_id_query, [accountId], (err, data)=>{
-                if(err) throw err;
-                resolve(data);
-            })
-        })
-    }
 }
 
 module.exports = accountRepository;

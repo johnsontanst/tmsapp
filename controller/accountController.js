@@ -29,7 +29,6 @@ exports.newAccountC = CatchAsyncError( async (req, res, next)=>{
     else{
         try{
             const user = await AccountRepository.newAccount(req.body.username, await passwordEncryption(req.body.password), req.body.email);
-
             if(user){
                 req.session.testing = 2;
                 return res.status(200).json({
@@ -58,24 +57,27 @@ exports.newAccountC = CatchAsyncError( async (req, res, next)=>{
 exports.loginC = CatchAsyncError( async(req,res,next)=>{
     try{
          //get account by username and return http error 403 if username is not found
-    const returnUser = await AccountRepository.getAccountByUsername(req.body.username);
-    if(returnUser[0] === undefined){
-        return res.status(403).json({
-            success:false,
-            message:"Invalid creds"
-        });
-    }
+        const returnUser = await AccountRepository.getAccountByUsername(req.body.username);
+        if(returnUser[0] === undefined){
+            return res.status(403).json({
+                success:false,
+                message:"Invalid creds"
+            });
+        }
 
     //password validation
     if(await passwordValidation(req.body.password, returnUser[0].password)){
         //Generate token
         const token = await generateJWT(returnUser[0].username);
-
+        //Get group 
+        const groups = await GroupRepository.getAllGroupNameByUsername(returnUser[0].username);
         //Set token in session
         req.session.authToken = token
+
         return res.status(200).send({
             success:true,
-            message:"Login success",
+            username: returnUser[0].username,
+            group: groups[0].groupName,
             token: req.session.authToken
         });
     }
@@ -100,6 +102,7 @@ exports.newGroupC = CatchAsyncError(async (req,res,next)=>{
     //Check for group name
     if(req.body.groupName){
         try{
+            console.log("result");
             const result = await GroupRepository.newGroup(req.body.groupName);
             if(result){
                 res.status(201).send({
@@ -124,7 +127,6 @@ exports.addUserToGroupC = CatchAsyncError(async (req, res, next)=>{
     //validate account id and group id
     const returnUser = await AccountRepository.getAccountByUsername(req.body.username);
     const returnGroup = await GroupRepository.getGroupByGroupName(req.body.groupName);
-    console.log(returnUser);
     if(returnUser[0], returnGroup[0]){
         try{
             const result = GroupRepository.addAccountToGroup(returnUser[0].username, returnGroup[0].groupName);
@@ -165,6 +167,18 @@ exports.logoutC = async(req, res,next)=>{
     }
 }
 
+//POST : auth token check roles || URL : /logout
+exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
+
+    if(!req.body.authToken){
+        res.status(403).send({
+            success:false
+        });
+    }
+    
+    //Decode auth token and retrieve user groups
+});
+
 
 exports.temprotected = async (req,res,next)=>{
     return res.status(200).send({
@@ -176,7 +190,7 @@ exports.temprotected = async (req,res,next)=>{
 exports.welcome = async(req,res,next)=>{
     return res.status(200).send({
         success: true,
-        message: req.session
+        message: "welcome"
     });
 }
 

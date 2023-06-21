@@ -9,7 +9,7 @@ const {
     create_group_query,
     get_group_by_groupName,
     add_user_into_group_query,
-    get_all_group_by_account_id_query,
+    get_all_group_by_username_query,
     get_all_account_by_group_id_query,
     } = require('./dbQueries');
 
@@ -44,10 +44,10 @@ class groupRepository{
             })
         })
     }
-
-    static getAllGroupNameByAccountId(accountId){
+    
+    static getAllGroupNameByUsername(username){
         return new Promise((resolve, reject)=>{
-            conn.execute(get_all_group_by_account_id_query, [accountId], (err,data)=>{
+            conn.execute(get_all_group_by_username_query, [username], (err,data)=>{
                 if(err) reject(err);
                 resolve(data);
             })

@@ -1,6 +1,8 @@
-//Import express
+//Import express and CORS
 const express = require('express');
 const app = express();
+const cors = require('cors');
+app.use(cors());
 
 //env variables 
 const dotenv = require('dotenv');

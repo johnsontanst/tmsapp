@@ -15,10 +15,10 @@ exports.loginAuthentication = CatchAsyncError(async (req,res,next)=>{
     let token = req.session.authToken;
 
     if(token){
-        const decoded_id = jwt.verify(token, process.env.SECRET_KEY);
+        const decoded_username = jwt.verify(token, process.env.SECRET_KEY);
 
         //Get user by id
-        const returnUser = await AccountRepository.getAccountById(decoded_id.id);
+        const returnUser = await AccountRepository.getAccountByUsername(decoded_username.usernmae);
         if(returnUser[0]){
             req.session.user = {
                 "username" : returnUser[0].username,

@@ -17,13 +17,13 @@ exports.checkGroup = (...groups)=>{
         let token = req.session.authToken;
 
         if(token){
-            const decoded_id = jwt.verify(token, process.env.SECRET_KEY);
+            const c = jwt.verify(token, process.env.SECRET_KEY);
 
             //Get user by id
-            const returnUser = await AccountRepository.getAccountById(decoded_id.id);
+            const returnUser = await AccountRepository.getAccountByUsername(decoded_username.username);
             if(returnUser[0]){
-                //Get all groups by the account id
-                const userAllGroups = await GroupRepository.getAllGroupNameByAccountId(returnUser[0].id);
+                //Get all groups by the account username
+                const userAllGroups = await GroupRepository.getAllGroupNameByUsername(returnUser[0].username);
                 //group validation
                 for(const k in userAllGroups){
                     if(groups.includes(userAllGroups[k].groupName)){
