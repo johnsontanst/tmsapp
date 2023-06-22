@@ -13,6 +13,9 @@ const {
     logoutC,
     authTokenCheckRole,
     allUsersC,
+    updateUser,
+    adminUpdateUser,
+    getUserProfile,
 
     } = require('../controller/accountController');
 
@@ -22,10 +25,10 @@ const {checkGroup} = require('../middleware/checkGroup');
 
 
 //ROUTE: Register new account
-router.route('/register').post(newAccountC);
+router.route('/register').post(loginAuthentication, checkGroup('admin'), newAccountC);
 
 //ROUTE: Register new group
-router.route('/register/group').post(newGroupC);
+router.route('/register/group').post(loginAuthentication, checkGroup('admin'), newGroupC);
 
 //ROUTE: Login
 router.route('/login').post(loginC);
@@ -39,8 +42,17 @@ router.route('/add/usertogroup').post(addUserToGroupC);
 //ROUTE: auth token check role
 router.route('/authtoken/checkrole').post(authTokenCheckRole)
 
-//ROUTE: auth get all users
-router.route('/allusers').post(loginAuthentication, checkGroup('admin'),allUsersC)
+//ROUTE: Get all users (Only admins)
+router.route('/allusers').post(loginAuthentication, checkGroup('admin'),allUsersC);
+
+//ROUTE: User chaange email/password
+router.route('/update/user').post(loginAuthentication, updateUser);
+
+//ROUTE: Get user profile 
+router.route('/profile').post(loginAuthentication, getUserProfile);
+
+//ROUTE: Admin modify user email/password/status/group
+router.route('/admin/update/user').post(loginAuthentication, checkGroup('admin'), adminUpdateUser);
 
 //Test route
 router.route('/temp').post(loginAuthentication, temprotected);

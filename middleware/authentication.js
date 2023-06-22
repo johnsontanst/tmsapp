@@ -12,7 +12,7 @@ const AccountRepository = require('../repository/accountRepository');
 
 
 exports.loginAuthentication = CatchAsyncError(async (req,res,next)=>{
-    let token = req.session.authToken;
+    let token = req.body.authTokenC;
 
     if(token){
         const decoded = jwt.verify(token, process.env.SECRET_KEY);

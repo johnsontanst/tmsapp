@@ -89,7 +89,7 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
             return res.status(200).send({
                 success:true,
                 username: returnUser[0].username,
-                group: groups,
+                group: groups[0].groupName,
                 token: req.session.authToken
             });
         }
@@ -181,6 +181,12 @@ exports.logoutC = async(req, res,next)=>{
 
 //POST : auth token check roles || URL : /authtoken/checkrole
 exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
+
+    if(!req.body.authTokenC && !req.body.username){
+        return res.status(401).send({
+            success:false
+        });
+    }
     
     //Check if current user is authorized 
     const u = jwt.verify(req.body.authTokenC, process.env.SECRET_KEY);
@@ -224,6 +230,188 @@ exports.allUsersC = catchAsyncError(async(req, res, next)=>{
         });
     }
 })
+
+//POST : user change password/email || URL : /update/user
+exports.updateUser = CatchAsyncError(async (req,res,next)=>{
+
+    try{
+        //check for auth token
+        if(!req.body.authTokenC && !req.body.username){
+            return res.status(401).send({
+                success:false
+            });
+        }
+
+        const u = jwt.verify(req.body.authTokenC, process.env.SECRET_KEY);
+        console.log(req.body.authTokenC);
+        //Verify username
+        if(u.username != req.body.username){
+            return res.status(401).send({
+                success:false
+            });
+        }
+
+        const returnUser = await AccountRepository.getAccountByUsername(u.username);
+        if(returnUser){
+            //validate password
+            if(req.body.oldPassword == undefined){
+                return res.status(500).send({
+                    success:false
+                });
+            }
+            if(!await passwordValidation(req.body.oldPassword, returnUser[0].password)){
+                return res.status(500).send({
+                    success:false
+                });
+            }
+
+            //Regex email n password 
+            const passRegex = /(?=.*?[\w])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,10}/
+            const emailRegex = /^\S+@\S+\.\S+$/
+
+            //Parse in email and password with validation
+            let updateEmail, updatePassword
+            if(req.body.email && emailRegex.test(req.body.email)){
+                updateEmail = req.body.email
+            }
+            else{
+                return res.status(500).send({
+                    success:false
+                });
+            }
+            if(req.body.password == undefined) {
+                updatePassword = returnUser[0].password;
+            }
+            else if(req.body.password && passRegex.test(req.body.password)){
+                updatePassword = await passwordEncryption(req.body.password);
+            }
+            else{
+                return res.status(500).send({
+                    success:false
+                });
+            }
+
+            //Update user
+            const result = await AccountRepository.updateUserEmailPassword(updateEmail, updatePassword, u.username);
+            if(result){
+                return res.status(200).send({
+                    success: true
+                });
+            }
+            
+        }
+        return res.status(500).send({
+            success: false
+        }); 
+    }
+    catch(err){
+        return res.status(500).send({
+            success: false
+        }); 
+    }
+
+}) 
+
+//POST : admin change user email/password/status/group || URL : /admin/update/user
+exports.adminUpdateUser = CatchAsyncError(async (req,res,next)=>{
+
+    try{
+        //retrieve the fields from req
+        let email, password, status, group, username, groupArray;
+        const passRegex = /(?=.*?[\w])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,10}/
+        const emailRegex = /^\S+@\S+\.\S+$/
+
+        if(req.body.email && emailRegex.test(req.body.email)) email = req.body.email;
+        if(req.body.password && passRegex.test(req.body.password)) password = await passwordEncryption(req.body.password);
+        if(req.body.status && (req.body.status != 1 || req.body.status != 0)) status = req.body.status;
+        if(req.body.group) group = req.body.group;
+        if(req.body.username) username = req.body.username;
+
+        //Update user
+        const updateUserResult = await AccountRepository.adminUpdateEmailPasswordStatus(email, password, username, status);
+        if(!updateUserResult){
+            return res.status(500).send({
+                success:false,
+                message:"Unable to update user"
+            });
+        }
+
+        //Delete/Update group
+        if(group){
+            const deleteGroupResult = await GroupRepository.deleteAllGroupsByUsername(username);
+            if(!deleteGroupResult){
+                return res.status(500).send({
+                    success:false,
+                    message:"Unable to unlink user from group"
+                });
+            }
+
+            //Conver group into array
+            groupArray = group.split(',');
+            if(groupArray){
+                for(let i = 0; i < groupArray.length; i++){
+                    const validGroupResult = await GroupRepository.getGroupByGroupName(groupArray[i]);
+                    
+                    if(validGroupResult.length == 0){
+                        return res.status(500).send({
+                            success:false
+                        });
+                    }
+                    else{
+                        const insertGroupResult = await GroupRepository.addAccountToGroup(username, groupArray[i]);
+                    }
+                }
+            }
+        }
+        else{
+            //Delete group
+            const deleteGroupResult = GroupRepository.deleteAllGroupsByUsername(username);
+            if(!deleteGroupResult){
+                return res.status(500).send({
+                    success:false,
+                    message:"Unable to unlink user from group"
+                });
+            }
+        }
+        return res.status(200).send({
+            success:true
+        });
+    }
+    catch(err){
+        return res.status(500).send({
+            success:false,
+            message:err
+        });
+    }
+});
+
+//POST : get user profile || URL : /profile
+exports.getUserProfile = CatchAsyncError(async(req,res,next)=>{
+    //decode JWT
+    if(!req.body.authTokenC){
+        res.status(500).send({
+            success:false
+        });
+    }
+
+    const decoded = jwt.verify(req.body.authTokenC, process.env.SECRET_KEY);
+
+    if(decoded){
+        //Get user 
+        const returnUser = await AccountRepository.getAccountByUsername(decoded.username);
+        //Get user group
+        const returnGroup = await GroupRepository.getAllGroupNameByUsername(decoded.username);
+        if(returnUser && returnGroup){
+            res.status(200).send({
+                success:true,
+                username:returnUser[0].username,
+                status:returnUser[0].status,
+                email:returnUser[0].email
+            });
+        }
+    }
+
+});
 
 
 

@@ -10,13 +10,11 @@ const {
     get_group_by_groupName,
     add_user_into_group_query,
     get_all_group_by_username_query,
-    get_all_account_by_group_id_query,
+    delete_all_groups_by_username_query,
     } = require('./dbQueries');
 
 
 class groupRepository{
-
-
 
     static newGroup(groupName){
         return new Promise(async (resolve, reject)=>{
@@ -39,7 +37,7 @@ class groupRepository{
     static getGroupByGroupName(groupName){
         return new Promise((resolve, reject)=>{
             conn.execute(get_group_by_groupName, [groupName], (err, data)=>{
-                if(err) reject(err);
+                if(err) reject(false);
                 resolve(data);
             })
         })
@@ -48,7 +46,7 @@ class groupRepository{
     static getAllGroupNameByUsername(username){
         return new Promise((resolve, reject)=>{
             conn.execute(get_all_group_by_username_query, [username], (err,data)=>{
-                if(err) reject(err);
+                if(err) reject(false);
                 resolve(data);
             })
         });
@@ -61,6 +59,15 @@ class groupRepository{
                 resolve(data);
             });
         })
+    }
+
+    static deleteAllGroupsByUsername(username){
+        return new Promise((resolve, reject)=>{
+            conn.execute(delete_all_groups_by_username_query, [username], (err)=>{
+                if(err) reject(err);
+                resolve(true);
+            });
+        }); 
     }
 }
 
