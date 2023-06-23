@@ -2,7 +2,16 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-app.use(cors());
+app.use(cors(
+    {
+        origin: 'http://localhost:3030',
+        optionsSuccessStatus: 200,
+        credentials:true
+    }
+));
+//Cookie Parser
+const cookieParser = require('cookie-parser')
+app.use(cookieParser())
 
 //env variables 
 const dotenv = require('dotenv');
@@ -15,7 +24,7 @@ const newRoutes = require('./routes/routes');
 const expressSession = require('express-session');
 app.use(expressSession({secret:process.env.COOKIE_SECRET_KEY, resave:false, saveUninitialized:false, cookie:{
     httpOnly:true,
-    maxAge:parseInt(process.env.COOKIE_EXPIRES_IN) 
+    maxAge:parseInt(process.env.COOKIE_EXPIRES_IN) * 60 * 1000 //2 hrs 
 }}));
 
 //use express json for req body 
@@ -33,6 +42,7 @@ app.get('/welcome', (req, res, next)=>{
 //Import middleware error 
 const errorMiddleware = require('./middleware/error');
 app.use(errorMiddleware);
+  
 
 //Listening to port
 app.listen(process.env.PORT, ()=>{

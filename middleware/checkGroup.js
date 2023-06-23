@@ -14,7 +14,7 @@ const GroupRepository = require('../repository/groupRepository');
 
 exports.checkGroup = (...groups)=>{
     return async (req,res,next)=>{
-        let token = req.body.authTokenC;
+        let token = req.cookies.authToken;
 
         if(token){
             const c = jwt.verify(token, process.env.SECRET_KEY);

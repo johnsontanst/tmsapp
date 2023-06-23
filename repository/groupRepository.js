@@ -11,6 +11,8 @@ const {
     add_user_into_group_query,
     get_all_group_by_username_query,
     delete_all_groups_by_username_query,
+    get_all_groups_query,
+    check_user_in_group_query,
     } = require('./dbQueries');
 
 
@@ -68,6 +70,24 @@ class groupRepository{
                 resolve(true);
             });
         }); 
+    }
+
+    static getAllGroups(){
+        return new Promise((resolve, reject)=>{
+            conn.execute(get_all_groups_query, (err, data)=>{
+                if(err) reject(err);
+                resolve(data);
+            });
+        });
+    }
+
+    static checkUserGroup(username, groupName){
+        return new Promise((resolve, reject)=>{
+            conn.execute(check_user_in_group_query, [groupName, username], (err, data)=>{
+                if(err) reject(err);
+                resolve(data);
+            })
+        });
     }
 }
 

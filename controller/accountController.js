@@ -85,6 +85,7 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
             const groups = await GroupRepository.getAllGroupNameByUsername(returnUser[0].username);
             //Set token in session
             req.session.authToken = token
+            res.cookie('authToken',token, { maxAge: parseInt(process.env.COOKIE_EXPIRES_IN) * 60 * 1000, httpOnly: true, origin:"localhost:3030" });
 
             return res.status(200).send({
                 success:true,
@@ -155,28 +156,22 @@ exports.addUserToGroupC = CatchAsyncError(async (req, res, next)=>{
 
 //POST : Logout || URL : /logout
 exports.logoutC = async(req, res,next)=>{
-    //Get auth token from session cookie
-    const authToken = req.session.authToken;
-    console.log(authToken);
-    //Logout user if auth token exisit
-    if(authToken){
-        //Looping through the session variables and deletes
-        for(const k in req.session){
-            if(k !== "cookie"){
-                delete req.session[k];
-            }
+    
+    //Looping through the session variables and deletes
+    for(const k in req.session){
+        if(k !== "cookie"){
+            delete req.session[k];
         }
-        return res.status(200).send({
-            success:true,
-            message:"logout success"
-        });
     }
-    else{
-        return res.status(500).send({
-            success:false,
-            message:"Fail to logout"
-        });
-    }
+    res.clearCookie("authToken");
+    res.clearCookie("connect.sid");
+    
+
+    return res.status(200).send({
+        success:true,
+        message:"logout success"
+    })
+
 }
 
 //POST : auth token check roles || URL : /authtoken/checkrole
@@ -324,11 +319,24 @@ exports.adminUpdateUser = CatchAsyncError(async (req,res,next)=>{
         if(req.body.email && emailRegex.test(req.body.email)) email = req.body.email;
         if(req.body.password && passRegex.test(req.body.password)) password = await passwordEncryption(req.body.password);
         if(req.body.status && (req.body.status != 1 || req.body.status != 0)) status = req.body.status;
-        if(req.body.group) group = req.body.group;
+        if(req.body.groups) group = req.body.groups;
         if(req.body.username) username = req.body.username;
 
+        //query the user from DB
+        const returnUser = await AccountRepository.getAccountByUsername(username);
+        if(returnUser.length == 0){
+            res.status(500).send({
+                success:false,
+                message:"no user found"
+            });
+        }
+        //Check email, password, status 
+        if(!password) password = returnUser[0].password;
+        if(!status) status = returnUser[0].status;
+        if(!email) status = returnUser[0].email;
+        
         //Update user
-        const updateUserResult = await AccountRepository.adminUpdateEmailPasswordStatus(email, password, username, status);
+        const updateUserResult = await AccountRepository.adminUpdateEmailPasswordStatus(email, password, returnUser[0].username, status);
         if(!updateUserResult){
             return res.status(500).send({
                 success:false,
@@ -345,23 +353,25 @@ exports.adminUpdateUser = CatchAsyncError(async (req,res,next)=>{
                     message:"Unable to unlink user from group"
                 });
             }
+            console.log('group deleted');
 
-            //Conver group into array
-            groupArray = group.split(',');
-            if(groupArray){
-                for(let i = 0; i < groupArray.length; i++){
-                    const validGroupResult = await GroupRepository.getGroupByGroupName(groupArray[i]);
-                    
-                    if(validGroupResult.length == 0){
-                        return res.status(500).send({
-                            success:false
-                        });
-                    }
-                    else{
-                        const insertGroupResult = await GroupRepository.addAccountToGroup(username, groupArray[i]);
+            //Update groups
+            for(let i = 0; i < group.length; i++){
+                const validGroupResult = await GroupRepository.getGroupByGroupName(group[i]);
+                if(validGroupResult.length == 0){
+                    return res.status(500).send({
+                        success:false
+                    });
+                }
+                else{
+                    //Check pivot table if user is in group, else add user into group. To prevent duplicate entry
+                    const checkUserInGroup = await GroupRepository.checkUserGroup(username, group[i]);
+                    if(checkUserInGroup.length == 0){
+                        const insertGroupResult = await GroupRepository.addAccountToGroup(username, group[i]);
                     }
                 }
             }
+
         }
         else{
             //Delete group
@@ -385,16 +395,47 @@ exports.adminUpdateUser = CatchAsyncError(async (req,res,next)=>{
     }
 });
 
+//POST : get user profile || URL : /admin/user/profile
+exports.adminGetUserProfile = CatchAsyncError(async(req,res,next)=>{
+    //Get user (username, email, status, groups)
+    const returnUser = await AccountRepository.getAccountByUsername(req.body.username);
+    
+    //Return Error if user not exist 
+    if(!returnUser){
+        return res.status(500).send({
+            success:false,
+            message:"User not exist"
+        });
+    }
+
+    //Get user's group
+    const returnGroups = await GroupRepository.getAllGroupNameByUsername(returnUser[0].username);
+
+    //Get all groups
+    const returnAllGroups = await GroupRepository.getAllGroups();
+
+    if(returnGroups && returnUser){
+        res.status(200).send({
+            success:true,
+            username: returnUser[0].username,
+            email: returnUser[0].email,
+            status: returnUser[0].status,
+            groups: returnGroups,
+            allgroups: returnAllGroups
+        });
+    }
+});
+
 //POST : get user profile || URL : /profile
 exports.getUserProfile = CatchAsyncError(async(req,res,next)=>{
     //decode JWT
-    if(!req.body.authTokenC){
+    if(!req.cookies.authToken){
         res.status(500).send({
             success:false
         });
     }
 
-    const decoded = jwt.verify(req.body.authTokenC, process.env.SECRET_KEY);
+    const decoded = jwt.verify(req.cookies.authToken, process.env.SECRET_KEY);
 
     if(decoded){
         //Get user 
@@ -414,7 +455,6 @@ exports.getUserProfile = CatchAsyncError(async(req,res,next)=>{
 });
 
 
-
 exports.temprotected = async (req,res,next)=>{
     return res.status(200).send({
         success:true,
@@ -425,7 +465,8 @@ exports.temprotected = async (req,res,next)=>{
 exports.welcome = async(req,res,next)=>{
     return res.status(200).send({
         success: true,
-        message: "welcome"
+        message: "welcome",
+        token : req.session.authToken
     });
 }
 

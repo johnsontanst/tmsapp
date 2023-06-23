@@ -2,6 +2,7 @@
 const express = require('express')
 const router = express.Router()
 
+
 //Import controllers
 const {
     newAccountC,
@@ -16,6 +17,7 @@ const {
     updateUser,
     adminUpdateUser,
     getUserProfile,
+    adminGetUserProfile,
 
     } = require('../controller/accountController');
 
@@ -50,6 +52,9 @@ router.route('/update/user').post(loginAuthentication, updateUser);
 
 //ROUTE: Get user profile 
 router.route('/profile').post(loginAuthentication, getUserProfile);
+
+//ROUTE: Admin get user profiles
+router.route('/admin/user/profile').post(loginAuthentication, checkGroup('admin'), adminGetUserProfile);
 
 //ROUTE: Admin modify user email/password/status/group
 router.route('/admin/update/user').post(loginAuthentication, checkGroup('admin'), adminUpdateUser);

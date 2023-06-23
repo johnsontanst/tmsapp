@@ -1,42 +1,31 @@
-const {conn} = require('./repository/dbConnection');
-const {create_user_table_query, alter_user_table_query, create_group_table_query, create_accountGroupRelation_table_query} = require('./repository/dbQueries');
 
-conn.execute(create_user_table_query, (err)=>{
-    if(err) throw err;
-    console.log("User table created");
-})
-conn.execute(create_group_table_query, (err)=>{
-    if(err) throw err;
-    console.log("group table created");
-})
-conn.execute(create_accountGroupRelation_table_query, (err)=>{
-    if(err) throw err;
-    console.log("accountGroupRelation table created");
-})
-
-
-CREATE TABLE IF NOT EXISTS nodelogin.accounts (username varchar(100) UNIQUE NOT NULL PRIMARY KEY, password varchar(255) NOT NULL, email varchar(100) NOT NULL, status INT DEFAULT 1) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 
 //Create account table
 CREATE TABLE `accounts` (
-  `username` varchar(50) NOT NULL PRIMARY KEY UNIQUE,
+  `username` varchar(50) NOT NULL,
   `password` varchar(255) NOT NULL,
   `email` varchar(100) NOT NULL,
-  `status` int DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+  `status` int DEFAULT '1',
+  PRIMARY KEY (`username`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 //Create accGroup table
-CREATE TABLE `accGroups` (
-  `groupName` varchar(255) NOT NULL PRIMARY KEY UNIQUE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+CREATE TABLE `accgroups` (
+  `groupName` varchar(255) NOT NULL,
+  PRIMARY KEY (`groupName`),
+  UNIQUE KEY `groupName` (`groupName`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 
 //Create accountGroupRelation table
-CREATE TABLE `accountsGroup` (
+CREATE TABLE `accountsgroup` (
   `fk_username` varchar(100) NOT NULL,
   `fk_groupName` varchar(100) NOT NULL,
-  FOREIGN KEY (`fk_username`) REFERENCES `accounts` (`username`),
-  FOREIGN KEY (`fk_groupName`) REFERENCES `accGroups` (`groupName`)
+  KEY `fk_username` (`fk_username`),
+  KEY `fk_groupName` (`fk_groupName`),
+  CONSTRAINT `accountsgroup_ibfk_1` FOREIGN KEY (`fk_username`) REFERENCES `accounts` (`username`),
+  CONSTRAINT `accountsgroup_ibfk_2` FOREIGN KEY (`fk_groupName`) REFERENCES `accgroups` (`groupName`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 //Create accountApplication table (KIV)
@@ -48,12 +37,58 @@ CREATE TABLE `accountApplication`(
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 //Create application table
-CREATE TABLE IF NOT EXISTS application (App_Acronym VARCHAR(200) PRIMARY KEY NOT NULL UNIQUE, App_Description LONG, App_Rnumber INT, App_startDate DATE, App_endDate DATE,  App_permit_Open VARCHAR(255), App_permit_toDoList VARCHAR(255), App_permit_Doing VARCHAR(255), App_permit_Done VARCHAR(255), FOREIGN KEY(`App_permit_Open`) REFERENCES `accgroups` (`groupName`), FOREIGN KEY(`App_permit_toDoList`) REFERENCES `accgroups` (`groupName`), FOREIGN KEY(`App_permit_Doing`) REFERENCES `accgroups` (`groupName`), FOREIGN KEY(`App_permit_Done`) REFERENCES `accgroups` (`groupName`));
+CREATE TABLE `application` (
+  `App_Acronym` varchar(200) NOT NULL,
+  `App_Description` mediumtext,
+  `App_Rnumber` int DEFAULT NULL,
+  `App_startDate` date DEFAULT NULL,
+  `App_endDate` date DEFAULT NULL,
+  `App_permit_Open` varchar(255) DEFAULT NULL,
+  `App_permit_toDoList` varchar(255) DEFAULT NULL,
+  `App_permit_Doing` varchar(255) DEFAULT NULL,
+  `App_permit_Done` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`App_Acronym`),
+  UNIQUE KEY `App_Acronym` (`App_Acronym`),
+  KEY `App_permit_Open` (`App_permit_Open`),
+  KEY `App_permit_toDoList` (`App_permit_toDoList`),
+  KEY `App_permit_Doing` (`App_permit_Doing`),
+  KEY `App_permit_Done` (`App_permit_Done`),
+  CONSTRAINT `application_ibfk_1` FOREIGN KEY (`App_permit_Open`) REFERENCES `accgroups` (`groupName`),
+  CONSTRAINT `application_ibfk_2` FOREIGN KEY (`App_permit_toDoList`) REFERENCES `accgroups` (`groupName`),
+  CONSTRAINT `application_ibfk_3` FOREIGN KEY (`App_permit_Doing`) REFERENCES `accgroups` (`groupName`),
+  CONSTRAINT `application_ibfk_4` FOREIGN KEY (`App_permit_Done`) REFERENCES `accgroups` (`groupName`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 
 //Create plan table
-CREATE TABLE IF NOT EXISTS nodelogin.Plan (Plan_MVP_name VARCHAR(200) UNIQUE PRIMARY KEY NOT NULL, Plan_startDate DATE, Plan_endDAte DATE, Plan_app_acronym VARCHAR(200), FOREIGN KEY(Plan_app_acronym) REFERENCES nodelogin.application (App_Acronym));
+CREATE TABLE `plan` (
+  `Plan_MVP_name` varchar(200) NOT NULL,
+  `Plan_startDate` date DEFAULT NULL,
+  `Plan_endDAte` date DEFAULT NULL,
+  `Plan_app_acronym` varchar(200) DEFAULT NULL,
+  PRIMARY KEY (`Plan_MVP_name`),
+  UNIQUE KEY `Plan_MVP_name` (`Plan_MVP_name`),
+  KEY `Plan_app_acronym` (`Plan_app_acronym`),
+  CONSTRAINT `plan_ibfk_1` FOREIGN KEY (`Plan_app_acronym`) REFERENCES `application` (`App_Acronym`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 //Create task table
-CREATE TABLE IF NOT EXISTS nodelogin.Task (Task_name VARCHAR(200) PRIMARY KEY NOT NULL UNIQUE, Task_description LONG, Task_notes LONG, Task_id LONG, Task_plan VARCHAR(200), Task_app_Acronym VARCHAR(200), Task_state VARCHAR(200), Task_creator VARCHAR(200), Task_owner VARCHAR(200), Task_createDate DATE, FOREIGN KEY(Task_plan) REFERENCES nodelogin.plan (Plan_MVP_name), FOREIGN KEY(Task_app_Acronym) REFERENCES nodelogin.application (App_Acronym));
+CREATE TABLE `task` (
+  `Task_name` varchar(200) NOT NULL,
+  `Task_description` mediumtext,
+  `Task_notes` mediumtext,
+  `Task_id` mediumtext,
+  `Task_plan` varchar(200) DEFAULT NULL,
+  `Task_app_Acronym` varchar(200) DEFAULT NULL,
+  `Task_state` varchar(200) DEFAULT NULL,
+  `Task_creator` varchar(200) DEFAULT NULL,
+  `Task_owner` varchar(200) DEFAULT NULL,
+  `Task_createDate` date DEFAULT NULL,
+  PRIMARY KEY (`Task_name`),
+  UNIQUE KEY `Task_name` (`Task_name`),
+  KEY `Task_plan` (`Task_plan`),
+  KEY `Task_app_Acronym` (`Task_app_Acronym`),
+  CONSTRAINT `task_ibfk_1` FOREIGN KEY (`Task_plan`) REFERENCES `plan` (`Plan_MVP_name`),
+  CONSTRAINT `task_ibfk_2` FOREIGN KEY (`Task_app_Acronym`) REFERENCES `application` (`App_Acronym`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 

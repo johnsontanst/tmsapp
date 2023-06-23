@@ -40,6 +40,8 @@ var get_all_username_by_application_todo_query = "SELECT accountsGroup.fk_userna
 
 var delete_all_groups_by_username_query = "DELETE FROM accountsgroup WHERE fk_groupName != 'admin' AND fk_username=?;"
 
+var check_user_in_group_query = "SELECT * FROM accountsgroup WHERE fk_groupName = ? AND fk_username = ?;"
+
 module.exports = {
     "create_user_table_query" :create_user_table_query,
     "alter_user_table_query" : alter_user_table_query,
@@ -60,5 +62,6 @@ module.exports = {
     "update_account_emailPassword_query" : update_account_emailPassword_query,
     "delete_all_groups_by_username_query" : delete_all_groups_by_username_query,
     "admin_update_user_account_query" : admin_update_user_account_query,
+    "check_user_in_group_query" : check_user_in_group_query
 
 }
