@@ -15,11 +15,13 @@ var get_account_by_email_query = "SELECT * FROM accounts where email=?;"
 
 var get_account_by_username_query = "SELECT * FROM accounts where username=?;"
 
-var get_all_users_query = "SELECT accounts.*, accountsGroup.fk_groupName from accounts LEFT JOIN accountsGroup ON accounts.username = accountsGroup.fk_username;"
+var get_all_users_group_query = "SELECT accounts.*, accountsGroup.fk_groupName from accounts LEFT JOIN accountsGroup ON accounts.username = accountsGroup.fk_username;"
 
 var update_account_emailPassword_query = "UPDATE accounts SET password=?, email=? WHERE username=?;"
 
 var admin_update_user_account_query = "UPDATE accounts SET password=?, email=?, status=? WHERE username=?;"
+
+var get_all_users_query = "SELECT * FROM accounts;"
 
 //Group queries
 var create_group_query = "INSERT INTO accGroups (groupName) VALUES(?);"
@@ -30,7 +32,7 @@ var add_user_into_group_query = "INSERT INTO accountsGroup (fk_username, fk_grou
 
 var get_all_group_by_username_query = "SELECT accGroups.groupName FROM accGroups JOIN accountsGroup ON accGroups.groupName = accountsGroup.fk_groupName WHERE accountsGroup.fk_username = ?;"
 
-var get_all_groups_query = "SELECT * FROM accGroups;"
+var get_all_groups_query = "SELECT * FROM accgroups;"
 
 var get_all_account_by_groupName_query = "SELECT accounts.username FROM accounts JOIN accountsGroup ON accounts.username = accountsGroup.fk_username WHERE accountsGroup.fk_groupName = ?;"
 
@@ -41,6 +43,8 @@ var get_all_username_by_application_todo_query = "SELECT accountsGroup.fk_userna
 var delete_all_groups_by_username_query = "DELETE FROM accountsgroup WHERE fk_groupName != 'admin' AND fk_username=?;"
 
 var check_user_in_group_query = "SELECT * FROM accountsgroup WHERE fk_groupName = ? AND fk_username = ?;"
+
+var get_pivot_groupsNusers_query = "SELECT * FROM accountsgroup;"
 
 module.exports = {
     "create_user_table_query" :create_user_table_query,
@@ -58,10 +62,12 @@ module.exports = {
     "get_all_username_by_application_open_query" : get_all_username_by_application_open_query,
     "get_all_account_by_groupName_query" : get_all_account_by_groupName_query,
     "get_all_username_by_application_todo_query" : get_all_username_by_application_todo_query,
-    "get_all_users_query" : get_all_users_query,
+    "get_all_users_group_query" : get_all_users_group_query,
     "update_account_emailPassword_query" : update_account_emailPassword_query,
     "delete_all_groups_by_username_query" : delete_all_groups_by_username_query,
     "admin_update_user_account_query" : admin_update_user_account_query,
-    "check_user_in_group_query" : check_user_in_group_query
+    "check_user_in_group_query" : check_user_in_group_query,
+    "get_all_users_query" : get_all_users_query,
+    "get_pivot_groupsNusers_query" : get_pivot_groupsNusers_query
 
 }

@@ -28,6 +28,6 @@ exports.loginAuthentication = CatchAsyncError(async (req,res,next)=>{
         }
     }
     else{
-        return next(new ErrorHandler("Not authenticated", 403));
+        return next(new ErrorHandler("Not authenticated", 413));
     }
 });

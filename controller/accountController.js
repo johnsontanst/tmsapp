@@ -65,7 +65,7 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
         if(returnUser[0] === undefined){
             return res.status(403).json({
                 success:false,
-                message:"Invalid creds"
+                message:"invalid creds"
             });
         }
 
@@ -83,14 +83,19 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
             const token = await generateJWT(returnUser[0].username);
             //Get group 
             const groups = await GroupRepository.getAllGroupNameByUsername(returnUser[0].username);
+            let rGroup = "user";
+            if (groups.length !=0 ) rGroup = groups[0].groupName;
+
             //Set token in session
             req.session.authToken = token
             res.cookie('authToken',token, { maxAge: parseInt(process.env.COOKIE_EXPIRES_IN) * 60 * 1000, httpOnly: true, origin:"localhost:3030" });
 
+
+
             return res.status(200).send({
                 success:true,
                 username: returnUser[0].username,
-                group: groups[0].groupName,
+                group: rGroup,
                 token: req.session.authToken
             });
         }
@@ -115,11 +120,10 @@ exports.newGroupC = CatchAsyncError(async (req,res,next)=>{
     //Check for group name
     if(req.body.groupName){
         try{
-            console.log("result");
             const result = await GroupRepository.newGroup(req.body.groupName);
             if(result){
-                res.status(201).send({
-                    status:true,
+                res.status(200).send({
+                    success:true,
                     message:"Group created"
                 })
             }
@@ -165,6 +169,8 @@ exports.logoutC = async(req, res,next)=>{
     }
     res.clearCookie("authToken");
     res.clearCookie("connect.sid");
+    req.session.cookie.maxAge = 1;
+    res.clearCookie("JSESSIONID");
     
 
     return res.status(200).send({
@@ -213,10 +219,12 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
 exports.allUsersC = catchAsyncError(async(req, res, next)=>{
     //Query DB for all users
     const allUsers = await AccountRepository.getAllUsers();
+    const allGroups = await GroupRepository.getPivotGroupNusers();
     if(allUsers){
         return res.status(200).send({
             success:true,
-            users: allUsers
+            users: allUsers,
+            groups:allGroups
         });
     }
     else{
@@ -231,14 +239,14 @@ exports.updateUser = CatchAsyncError(async (req,res,next)=>{
 
     try{
         //check for auth token
-        if(!req.body.authTokenC && !req.body.username){
+        if(!req.cookies.authToken && !req.body.username){
             return res.status(401).send({
                 success:false
             });
         }
 
-        const u = jwt.verify(req.body.authTokenC, process.env.SECRET_KEY);
-        console.log(req.body.authTokenC);
+        const u = jwt.verify(req.cookies.authToken, process.env.SECRET_KEY);
+
         //Verify username
         if(u.username != req.body.username){
             return res.status(401).send({
@@ -395,7 +403,7 @@ exports.adminUpdateUser = CatchAsyncError(async (req,res,next)=>{
     }
 });
 
-//POST : get user profile || URL : /admin/user/profile
+//POST : admin get user profile || URL : /admin/user/profile
 exports.adminGetUserProfile = CatchAsyncError(async(req,res,next)=>{
     //Get user (username, email, status, groups)
     const returnUser = await AccountRepository.getAccountByUsername(req.body.username);
@@ -415,7 +423,7 @@ exports.adminGetUserProfile = CatchAsyncError(async(req,res,next)=>{
     const returnAllGroups = await GroupRepository.getAllGroups();
 
     if(returnGroups && returnUser){
-        res.status(200).send({
+        return res.status(200).send({
             success:true,
             username: returnUser[0].username,
             email: returnUser[0].email,
@@ -443,7 +451,7 @@ exports.getUserProfile = CatchAsyncError(async(req,res,next)=>{
         //Get user group
         const returnGroup = await GroupRepository.getAllGroupNameByUsername(decoded.username);
         if(returnUser && returnGroup){
-            res.status(200).send({
+            return res.status(200).send({
                 success:true,
                 username:returnUser[0].username,
                 status:returnUser[0].status,
@@ -451,6 +459,23 @@ exports.getUserProfile = CatchAsyncError(async(req,res,next)=>{
             });
         }
     }
+
+});
+
+//POST : admin get all groups || URL : /admin/allgroups
+exports.adminGetAllGroups = CatchAsyncError(async(req, res,next)=>{
+    //Get all groups and return 
+    const allGroups = await GroupRepository.getAllGroups();
+
+    if(allGroups){
+        return res.status(200).send({
+            success:true,
+            groups:allGroups
+        });
+    }
+    return res.status(500).send({
+        success:false
+    });
 
 });
 

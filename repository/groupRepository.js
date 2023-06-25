@@ -13,6 +13,7 @@ const {
     delete_all_groups_by_username_query,
     get_all_groups_query,
     check_user_in_group_query,
+    get_pivot_groupsNusers_query,
     } = require('./dbQueries');
 
 
@@ -75,6 +76,15 @@ class groupRepository{
     static getAllGroups(){
         return new Promise((resolve, reject)=>{
             conn.execute(get_all_groups_query, (err, data)=>{
+                if(err) reject(err);
+                resolve(data);
+            });
+        });
+    }
+
+    static getPivotGroupNusers(){
+        return new Promise((resolve, reject)=>{
+            conn.execute(get_pivot_groupsNusers_query, (err, data)=>{
                 if(err) reject(err);
                 resolve(data);
             });

@@ -18,6 +18,7 @@ const {
     adminUpdateUser,
     getUserProfile,
     adminGetUserProfile,
+    adminGetAllGroups,
 
     } = require('../controller/accountController');
 
@@ -27,7 +28,7 @@ const {checkGroup} = require('../middleware/checkGroup');
 
 
 //ROUTE: Register new account
-router.route('/register').post(loginAuthentication, checkGroup('admin'), newAccountC);
+router.route('/register').post(newAccountC);
 
 //ROUTE: Register new group
 router.route('/register/group').post(loginAuthentication, checkGroup('admin'), newGroupC);
@@ -58,6 +59,9 @@ router.route('/admin/user/profile').post(loginAuthentication, checkGroup('admin'
 
 //ROUTE: Admin modify user email/password/status/group
 router.route('/admin/update/user').post(loginAuthentication, checkGroup('admin'), adminUpdateUser);
+
+//ROUTE: Admin get all groups (Only admins)
+router.route('/allgroups').post(loginAuthentication, checkGroup('admin'), adminGetAllGroups);
 
 //Test route
 router.route('/temp').post(loginAuthentication, temprotected);

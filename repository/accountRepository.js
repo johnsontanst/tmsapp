@@ -6,9 +6,10 @@ const {
     create_account_query,
     get_account_by_email_query,
     get_account_by_username_query,
-    get_all_users_query,
+    get_all_users_group_query,
     update_account_emailPassword_query,
     admin_update_user_account_query,
+    get_all_users_query,
     } = require('./dbQueries');
 
 
@@ -38,6 +39,15 @@ class accountRepository{
                 if(err) reject(err);
                 resolve(data);
             });
+        });
+    }
+
+    static getAllUsersWithGroups(){
+        return new Promise((resolve, reject)=>{
+            conn.execute(get_all_users_group_query, (err, data)=>{
+                if (err) reject(err);
+                resolve(data);
+            })
         });
     }
 
