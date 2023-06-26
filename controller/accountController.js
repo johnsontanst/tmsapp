@@ -83,8 +83,14 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
             const token = await generateJWT(returnUser[0].username);
             //Get group 
             const groups = await GroupRepository.getAllGroupNameByUsername(returnUser[0].username);
-            let rGroup = "user";
-            if (groups.length !=0 ) rGroup = groups[0].groupName;
+            let groupArray = []
+
+            if(groups && groups.length >= 1){
+                //Modify group array
+                for (const k in groups){
+                    groupArray.push(groups[k].groupName);
+                }
+            }
 
             //Set token in session
             req.session.authToken = token
@@ -95,8 +101,8 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
             return res.status(200).send({
                 success:true,
                 username: returnUser[0].username,
-                group: rGroup,
-                token: req.session.authToken
+                groups: groupArray
+                
             });
         }
         else{
@@ -180,33 +186,40 @@ exports.logoutC = async(req, res,next)=>{
 
 }
 
-//POST : auth token check roles || URL : /authtoken/checkrole
+//POST : auth token return user info || URL : /authtoken/return/userinfo
 exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
 
-    if(!req.body.authTokenC && !req.body.username){
-        return res.status(401).send({
+    if(!req.cookies.authToken){
+        return res.status(200).send({
             success:false
         });
     }
     
     //Check if current user is authorized 
-    const u = jwt.verify(req.body.authTokenC, process.env.SECRET_KEY);
+    const u = jwt.verify(req.cookies.authToken, process.env.SECRET_KEY);
 
-    if(u.username != req.body.username){
-        return res.status(403).send({
-            success:false
-        });
-    }
+    //Get user info and groups
+    const returnUser = await AccountRepository.getAccountByUsername(u.username);
+    const returnGroups = await GroupRepository.getAllGroupNameByUsername(u.username);
 
-    if(u){
-        const isUserInGroup = await checkGroup(u.username, req.body.groupName);
-
-        if(isUserInGroup){
-
-            return res.status(200).send({
-                success:true
-            });
+    if(returnUser.length >=1 && returnGroups){
+        const groupArray = []
+        //Modify group array
+        for (const k in returnGroups){
+            groupArray.push(returnGroups[k].groupName);
         }
+        return res.status(200).send({
+            success:true,
+            username:returnUser[0].username,
+            groups:groupArray
+        })
+    }
+    else if(returnUser.length >= 1){
+        return res.status(200).send({
+            success:true,
+            username:returnUser[0].username,
+            groups:[]
+        })
     }
 
     return res.status(403).send({
@@ -258,13 +271,15 @@ exports.updateUser = CatchAsyncError(async (req,res,next)=>{
         if(returnUser){
             //validate password
             if(req.body.oldPassword == undefined){
-                return res.status(500).send({
-                    success:false
+                return res.status(403).send({
+                    success:false,
+                    message:"invalid password verification"
                 });
             }
             if(!await passwordValidation(req.body.oldPassword, returnUser[0].password)){
-                return res.status(500).send({
-                    success:false
+                return res.status(403).send({
+                    success:false,
+                    message:"invalid password verification"
                 });
             }
 
@@ -354,17 +369,32 @@ exports.adminUpdateUser = CatchAsyncError(async (req,res,next)=>{
 
         //Delete/Update group
         if(group){
-            const deleteGroupResult = await GroupRepository.deleteAllGroupsByUsername(username);
-            if(!deleteGroupResult){
-                return res.status(500).send({
-                    success:false,
-                    message:"Unable to unlink user from group"
-                });
+            //Delete group
+             //Check if current user is cookie user && if cookie current user is in admin
+            const token = req.cookies.authToken;
+            const decoded = jwt.verify(token, process.env.SECRET_KEY);
+            if(decoded.username == returnUser[0].username){
+                const deleteGroupResult = await GroupRepository.deleteAllGroupsByUsernameWOadmin(username);
+                if(!deleteGroupResult){
+                    return res.status(500).send({
+                        success:false,
+                        message:"Unable to unlink user from group"
+                    });
+                }
             }
-            console.log('group deleted');
+            else{
+                const deleteGroupResult = await GroupRepository.deleteAllGroupByUsername(username);
+                if(!deleteGroupResult){
+                    return res.status(500).send({
+                        success:false,
+                        message:"Unable to unlink user from group"
+                    });
+                }
+            }
 
             //Update groups
             for(let i = 0; i < group.length; i++){
+                //Check if group exisit 
                 const validGroupResult = await GroupRepository.getGroupByGroupName(group[i]);
                 if(validGroupResult.length == 0){
                     return res.status(500).send({
@@ -383,7 +413,7 @@ exports.adminUpdateUser = CatchAsyncError(async (req,res,next)=>{
         }
         else{
             //Delete group
-            const deleteGroupResult = GroupRepository.deleteAllGroupsByUsername(username);
+            const deleteGroupResult = GroupRepository.deleteAllGroupsByUsernameWOadmin(username);
             if(!deleteGroupResult){
                 return res.status(500).send({
                     success:false,

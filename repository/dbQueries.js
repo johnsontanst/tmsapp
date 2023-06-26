@@ -40,7 +40,9 @@ var get_all_username_by_application_open_query = "SELECT accountsGroup.fk_userna
 
 var get_all_username_by_application_todo_query = "SELECT accountsGroup.fk_username from accountsGroup JOIN application ON accountsGroup.fk_groupName = application.App_permit_toDoList WHERE application.App_Acronym = ?"
 
-var delete_all_groups_by_username_query = "DELETE FROM accountsgroup WHERE fk_groupName != 'admin' AND fk_username=?;"
+var delete_all_groupsWOadmin_by_username_query = "DELETE FROM accountsgroup WHERE fk_groupName != 'admin' AND fk_username=?;"
+
+var delete_all_groups_by_username = "DELETE FROM accountsgroup WHERE fk_username =?;"
 
 var check_user_in_group_query = "SELECT * FROM accountsgroup WHERE fk_groupName = ? AND fk_username = ?;"
 
@@ -64,10 +66,11 @@ module.exports = {
     "get_all_username_by_application_todo_query" : get_all_username_by_application_todo_query,
     "get_all_users_group_query" : get_all_users_group_query,
     "update_account_emailPassword_query" : update_account_emailPassword_query,
-    "delete_all_groups_by_username_query" : delete_all_groups_by_username_query,
+    "delete_all_groupsWOadmin_by_username_query" : delete_all_groupsWOadmin_by_username_query,
     "admin_update_user_account_query" : admin_update_user_account_query,
     "check_user_in_group_query" : check_user_in_group_query,
     "get_all_users_query" : get_all_users_query,
-    "get_pivot_groupsNusers_query" : get_pivot_groupsNusers_query
+    "get_pivot_groupsNusers_query" : get_pivot_groupsNusers_query,
+    "delete_all_groups_by_username" : delete_all_groups_by_username
 
 }

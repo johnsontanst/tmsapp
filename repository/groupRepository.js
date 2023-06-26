@@ -10,10 +10,11 @@ const {
     get_group_by_groupName,
     add_user_into_group_query,
     get_all_group_by_username_query,
-    delete_all_groups_by_username_query,
+    delete_all_groupsWOadmin_by_username_query,
     get_all_groups_query,
     check_user_in_group_query,
     get_pivot_groupsNusers_query,
+    delete_all_groups_by_username,
     } = require('./dbQueries');
 
 
@@ -64,13 +65,22 @@ class groupRepository{
         })
     }
 
-    static deleteAllGroupsByUsername(username){
+    static deleteAllGroupsByUsernameWOadmin(username){
         return new Promise((resolve, reject)=>{
-            conn.execute(delete_all_groups_by_username_query, [username], (err)=>{
+            conn.execute(delete_all_groupsWOadmin_by_username_query, [username], (err)=>{
                 if(err) reject(err);
                 resolve(true);
             });
         }); 
+    }
+
+    static deleteAllGroupByUsername(username){
+        return new Promise((resolve, reject)=>{
+            conn.execute(delete_all_groups_by_username, [username], (err)=>{
+                if(err) reject(err);
+                resolve(true);
+            });
+        });
     }
 
     static getAllGroups(){

@@ -43,7 +43,7 @@ router.route('/logout').post(logoutC);
 router.route('/add/usertogroup').post(addUserToGroupC);
 
 //ROUTE: auth token check role
-router.route('/authtoken/checkrole').post(authTokenCheckRole)
+router.route('/authtoken/return/userinfo').post(authTokenCheckRole);
 
 //ROUTE: Get all users (Only admins)
 router.route('/allusers').post(loginAuthentication, checkGroup('admin'),allUsersC);
