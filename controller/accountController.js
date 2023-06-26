@@ -189,9 +189,16 @@ exports.logoutC = async(req, res,next)=>{
 //POST : auth token return user info || URL : /authtoken/return/userinfo
 exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
 
-    if(!req.cookies.authToken){
+    if(!req.cookies.authToken || !req.session.authToken){
         return res.status(200).send({
-            success:false
+            success:false,
+            message:"invalid token"
+        });
+    }
+    if(req.cookies.authToken != req.session.authToken){
+        return res.status(200).send({
+            success:false,
+            message:"invalid token"
         });
     }
     
@@ -223,7 +230,8 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
     }
 
     return res.status(403).send({
-        success:false
+        success:false,
+        message:"invalid token"
     });
 });
 
@@ -254,7 +262,8 @@ exports.updateUser = CatchAsyncError(async (req,res,next)=>{
         //check for auth token
         if(!req.cookies.authToken && !req.body.username){
             return res.status(401).send({
-                success:false
+                success:false,
+                message:"invalid token"
             });
         }
 
@@ -263,7 +272,8 @@ exports.updateUser = CatchAsyncError(async (req,res,next)=>{
         //Verify username
         if(u.username != req.body.username){
             return res.status(401).send({
-                success:false
+                success:false,
+                message:"invalid username"
             });
         }
 
@@ -293,8 +303,9 @@ exports.updateUser = CatchAsyncError(async (req,res,next)=>{
                 updateEmail = req.body.email
             }
             else{
-                return res.status(500).send({
-                    success:false
+                return res.status(403).send({
+                    success:false,
+                    message:"invalid email"
                 });
             }
             if(req.body.password == undefined) {
@@ -304,8 +315,9 @@ exports.updateUser = CatchAsyncError(async (req,res,next)=>{
                 updatePassword = await passwordEncryption(req.body.password);
             }
             else{
-                return res.status(500).send({
-                    success:false
+                return res.status(403).send({
+                    success:false,
+                    message:"invalid new password"
                 });
             }
 
