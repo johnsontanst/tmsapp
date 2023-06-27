@@ -24,17 +24,45 @@ exports.newAccountC = CatchAsyncError( async (req, res, next)=>{
     const usernameRegex = /[a-zA-Z]+[0-9]*/
 
     //Check the request has all the fields and validate
-    if(!usernameRegex.test(req.body.username) || !passRegex.test(req.body.password) || !emailRegex.test(req.body.email) ){
+    if(!usernameRegex.test(req.body.username)){
         return res.status(500).json({
             success:false,
-            message:"Unable to register"
+            message:"Invalid username input"
+        });
+    }
+    else if(!passRegex.test(req.body.password)){
+        return res.status(500).json({
+            success:false,
+            message:"Invalid password input"
+        });
+    }
+    else if(!emailRegex.test(req.body.email)){
+        return res.status(500).json({
+            success:false,
+            message:"Invalid email input"
         });
     }
     else{
         try{
             const user = await AccountRepository.newAccount(req.body.username, await passwordEncryption(req.body.password), req.body.email);
             if(user){
-                req.session.testing = 2;
+                //Link user to groups
+                if(req.body.groups.length != 0){
+                    for(const k in req.body.groups){
+                        //Check if group exist 
+                        const checkValidGroup = await GroupRepository.getGroupByGroupName(req.body.groups[k]);
+                        if(checkValidGroup){
+                            //Link user to group if group is valid 
+                            const res = await GroupRepository.addAccountToGroup(req.body.username, req.body.groups[k]);
+                        }
+                        else{
+                            return res.status(403).json({
+                                success:false,
+                                message:"Error in adding user into group"
+                            })
+                        }
+                    }
+                }
                 return res.status(200).json({
                     success:true,
                     message:"User registered"
@@ -79,8 +107,11 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
 
         //password validation
         if(await passwordValidation(req.body.password, returnUser[0].password)){
+            //Get user ip and user agent
+            const userip =  req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
+            const useragent = req.headers['user-agent'];
             //Generate token
-            const token = await generateJWT(returnUser[0].username);
+            const token = await generateJWT(returnUser[0].username, userip, useragent);
             //Get group 
             const groups = await GroupRepository.getAllGroupNameByUsername(returnUser[0].username);
             let groupArray = []
@@ -101,7 +132,9 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
             return res.status(200).send({
                 success:true,
                 username: returnUser[0].username,
-                groups: groupArray
+                groups: groupArray,
+                userip:userip,
+                useragent:useragent
                 
             });
         }
@@ -204,6 +237,24 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
     
     //Check if current user is authorized 
     const u = jwt.verify(req.cookies.authToken, process.env.SECRET_KEY);
+
+    //Check for user string and user ip address
+    const currentUserIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        if(u.userip != currentUserIp || !currentUserIp){
+            return res.status(200).send({
+                success:false,
+                message:"invalid session"
+            });
+    }
+
+    //check user agent
+    const currentUserAgent = req.headers['user-agent'];
+    if(u.useragent != currentUserAgent){
+        return res.status(200).send({
+            success:false,
+            message:"invalid session"
+        });
+    }
 
     //Get user info and groups
     const returnUser = await AccountRepository.getAccountByUsername(u.username);
@@ -504,7 +555,7 @@ exports.getUserProfile = CatchAsyncError(async(req,res,next)=>{
 
 });
 
-//POST : admin get all groups || URL : /admin/allgroups
+//POST : admin get all groups || URL : /allgroups
 exports.adminGetAllGroups = CatchAsyncError(async(req, res,next)=>{
     //Get all groups and return 
     const allGroups = await GroupRepository.getAllGroups();

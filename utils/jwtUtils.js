@@ -5,9 +5,9 @@ const jwt = require('jsonwebtoken')
 const AccountRepository = require('../repository/accountRepository');
 const GroupRepository = require('../repository/groupRepository');
 
-exports.generateJWT = async (username)=>{
+exports.generateJWT = async (username, userIp, userAgent)=>{
     if(username){
-        return jwt.sign({username:username}, process.env.SECRET_KEY, {expiresIn: process.env.JWT_EXPIRE_IN});
+        return jwt.sign({username:username, userip:userIp, useragent:userAgent}, process.env.SECRET_KEY, {expiresIn: process.env.JWT_EXPIRE_IN});
     }
     else{
         return false;

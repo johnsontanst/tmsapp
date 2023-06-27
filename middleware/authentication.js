@@ -14,12 +14,27 @@ const AccountRepository = require('../repository/accountRepository');
 exports.loginAuthentication = CatchAsyncError(async (req,res,next)=>{
     let token = req.cookies.authToken;
     let sToken = req.session.authToken;
+
+    //1 check
     if(token != sToken){
         return next(new ErrorHandler("Not authenticated", 403));
     }
 
+
     if(token){
         const decoded = jwt.verify(token, process.env.SECRET_KEY);
+
+        //2 check : check user ip
+        const currentUserIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        if(decoded.userip != currentUserIp || !currentUserIp){
+            return next(new ErrorHandler("Not authenticated", 403));
+        }
+
+        //3 check : check user agent
+        const currentUserAgent = req.headers['user-agent'];
+        if(decoded.useragent != currentUserAgent){
+            return next(new ErrorHandler("Not authenticated", 403));
+        }
 
         //Get user by id
         const returnUser = await AccountRepository.getAccountByUsername(decoded.username);

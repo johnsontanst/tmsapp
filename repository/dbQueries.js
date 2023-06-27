@@ -13,7 +13,7 @@ var create_account_query = "INSERT INTO accounts (username, password, email) VAL
 
 var get_account_by_email_query = "SELECT * FROM accounts where email=?;"
 
-var get_account_by_username_query = "SELECT * FROM accounts where username=?;"
+var get_account_by_username_query = "SELECT * FROM accounts where username=? AND status = 1;"
 
 var get_all_users_group_query = "SELECT accounts.*, accountsGroup.fk_groupName from accounts LEFT JOIN accountsGroup ON accounts.username = accountsGroup.fk_username;"
 
