@@ -11,9 +11,11 @@ var create_accountGroupRelation_table_query = "CREATE TABLE IF NOT EXISTS accoun
 //Account queries
 var create_account_query = "INSERT INTO accounts (username, password, email) VALUES(?,?,?);"
 
+var create_account_without_email_query = "INSERT INTO accounts (username, password) VALUES(?,?);"
+
 var get_account_by_email_query = "SELECT * FROM accounts where email=?;"
 
-var get_account_by_username_query = "SELECT * FROM accounts where username=? AND status = 1;"
+var get_account_by_username_query = "SELECT * FROM accounts where username=?;"
 
 var get_all_users_group_query = "SELECT accounts.*, accountsGroup.fk_groupName from accounts LEFT JOIN accountsGroup ON accounts.username = accountsGroup.fk_username;"
 
@@ -51,6 +53,7 @@ var get_pivot_groupsNusers_query = "SELECT * FROM accountsgroup;"
 module.exports = {
     "create_user_table_query" :create_user_table_query,
     "alter_user_table_query" : alter_user_table_query,
+    "create_account_without_email_query" : create_account_without_email_query,
     "create_group_table_query" : create_group_table_query,
     "create_accountGroupRelation_table_query" : create_accountGroupRelation_table_query,
     "create_account_query" : create_account_query,

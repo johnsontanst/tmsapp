@@ -10,6 +10,7 @@ const {
     update_account_emailPassword_query,
     admin_update_user_account_query,
     get_all_users_query,
+    create_account_without_email_query
     } = require('./dbQueries');
 
 
@@ -18,6 +19,15 @@ class accountRepository{
     static newAccount(username, password, email){
         return new Promise((resolve, reject)=>{
             conn.execute(create_account_query, [username, password, email], (err)=>{
+                if(err) reject(err);
+                resolve(true);
+            })
+        })
+    }
+    
+    static newAccountWithoutEmail(username, password){
+        return new Promise((resolve, reject)=>{
+            conn.execute(create_account_without_email_query, [username, password], (err)=>{
                 if(err) reject(err);
                 resolve(true);
             })

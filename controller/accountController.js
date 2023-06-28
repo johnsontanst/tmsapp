@@ -3,7 +3,7 @@ const AccountRepository = require('../repository/accountRepository');
 const GroupRepository = require('../repository/groupRepository');
 
 //Import JWT
-const {generateJWT, checkGroup} = require('../utils/jwtUtils');
+const {generateJWT} = require('../utils/jwtUtils');
 
 //Import JWT token
 const jwt = require('jsonwebtoken')
@@ -16,12 +16,30 @@ const CatchAsyncError = require('../middleware/catchAsyncError');
 const {passwordEncryption, passwordValidation} = require('../utils/passwordUtils');
 const catchAsyncError = require('../middleware/catchAsyncError');
 
-//POST : create new account || URL : /register
+//Import Checkgroup
+const {checkGroup} = require('../middleware/checkGroup');
+
+//POST : create new account || URL : /register || Checkgroup
 exports.newAccountC = CatchAsyncError( async (req, res, next)=>{
+    //CheckGroup
+    if(!req.body.un || !req.body.gn){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
+    const checkGroupR = await checkGroup(req.body.un, req.body.gn);
+    if(!checkGroupR){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
+
     //Regex password & email
-    const passRegex = /(?=.*?[\w])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,10}/
+    const passRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+[\]{}|\\:;"'<>,.?/~]).{8,10}$/
     const emailRegex = /^\S+@\S+\.\S+$/
-    const usernameRegex = /[a-zA-Z]+[0-9]*/
+    const usernameRegex = /^[a-zA-Z0-9]+$/
 
     //Check the request has all the fields and validate
     if(!usernameRegex.test(req.body.username)){
@@ -36,7 +54,7 @@ exports.newAccountC = CatchAsyncError( async (req, res, next)=>{
             message:"Invalid password input"
         });
     }
-    else if(!emailRegex.test(req.body.email)){
+    else if(req.body.email && !emailRegex.test(req.body.email)){
         return res.status(500).json({
             success:false,
             message:"Invalid email input"
@@ -44,36 +62,74 @@ exports.newAccountC = CatchAsyncError( async (req, res, next)=>{
     }
     else{
         try{
-            const user = await AccountRepository.newAccount(req.body.username, await passwordEncryption(req.body.password), req.body.email);
-            if(user){
-                //Link user to groups
-                if(req.body.groups.length != 0){
-                    for(const k in req.body.groups){
-                        //Check if group exist 
-                        const checkValidGroup = await GroupRepository.getGroupByGroupName(req.body.groups[k]);
-                        if(checkValidGroup){
-                            //Link user to group if group is valid 
-                            const res = await GroupRepository.addAccountToGroup(req.body.username, req.body.groups[k]);
-                        }
-                        else{
-                            return res.status(403).json({
-                                success:false,
-                                message:"Error in adding user into group"
-                            })
+            //Insert account based on email 
+            if(req.body.email){
+                const user = await AccountRepository.newAccount(req.body.username, await passwordEncryption(req.body.password), req.body.email);
+                if(user){
+                    //Link user to groups
+                    if(req.body.groups.length != 0){
+                        for(const k in req.body.groups){
+                            //Check if group exist 
+                            const checkValidGroup = await GroupRepository.getGroupByGroupName(req.body.groups[k]);
+                            if(checkValidGroup){
+                                //Link user to group if group is valid 
+                                const res = await GroupRepository.addAccountToGroup(req.body.username, req.body.groups[k]);
+                            }
+                            else{
+                                return res.status(403).json({
+                                    success:false,
+                                    message:"Error in adding user into group"
+                                })
+                            }
                         }
                     }
+                    return res.status(200).json({
+                        success:true,
+                        message:"User registered"
+                    })
                 }
-                return res.status(200).json({
-                    success:true,
-                    message:"User registered"
-                })
+                else{
+                    return res.status(500).json({
+                        success:false,
+                        message:"Unable to register"
+                    });
+                }
+                //END USER CREATION
             }
             else{
-                return res.status(500).json({
-                    success:false,
-                    message:"Unable to register"
-                });
+                const user = await AccountRepository.newAccountWithoutEmail(req.body.username, await passwordEncryption(req.body.password));
+                if(user){
+                    //Link user to groups
+                    if(req.body.groups.length != 0){
+                        for(const k in req.body.groups){
+                            //Check if group exist 
+                            const checkValidGroup = await GroupRepository.getGroupByGroupName(req.body.groups[k]);
+                            if(checkValidGroup){
+                                //Link user to group if group is valid 
+                                const res = await GroupRepository.addAccountToGroup(req.body.username, req.body.groups[k]);
+                            }
+                            else{
+                                return res.status(403).json({
+                                    success:false,
+                                    message:"Error in adding user into group"
+                                })
+                            }
+                        }
+                    }
+                    return res.status(200).json({
+                        success:true,
+                        message:"account created"
+                    })
+                }
+                else{
+                    return res.status(500).json({
+                        success:false,
+                        message:"Error in creating account"
+                    });
+                }
+                //END USER CREATION
             }
+            
         }
         catch(err){
             return res.status(500).json({
@@ -154,10 +210,29 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
    
 });
 
-//POST : create group || URL : /register/group
+//POST : create group || URL : /register/group || checkgroup
 exports.newGroupC = CatchAsyncError(async (req,res,next)=>{
+     //CheckGroup
+     if(!req.body.un || !req.body.gn){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
+    const checkGroupR = await checkGroup(req.body.un, req.body.gn);
+    if(!checkGroupR){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
+
+    //regex for groupName
+    const groupNameRegex = /^[A-Za-z0-9]+$/
+    
+
     //Check for group name
-    if(req.body.groupName){
+    if(req.body.groupName && req.body.groupName != "" && groupNameRegex.test(groupNameRegex)){
         try{
             const result = await GroupRepository.newGroup(req.body.groupName);
             if(result){
@@ -287,8 +362,23 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
 });
 
 
-//POST : get all users || URL : /allusers
+//POST : get all users || URL : /allusers || Checkgroup
 exports.allUsersC = catchAsyncError(async(req, res, next)=>{
+     //CheckGroup
+     if(!req.body.un || !req.body.gn){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
+    const checkGroupR = await checkGroup(req.body.un, req.body.gn);
+    if(!checkGroupR){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
+
     //Query DB for all users
     const allUsers = await AccountRepository.getAllUsers();
     const allGroups = await GroupRepository.getPivotGroupNusers();
@@ -345,13 +435,16 @@ exports.updateUser = CatchAsyncError(async (req,res,next)=>{
             }
 
             //Regex email n password 
-            const passRegex = /(?=.*?[\w])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,10}/
+            const passRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+[\]{}|\\:;"'<>,.?/~]).{8,10}$/
             const emailRegex = /^\S+@\S+\.\S+$/
 
             //Parse in email and password with validation
             let updateEmail, updatePassword
-            if(req.body.email && emailRegex.test(req.body.email)){
-                updateEmail = req.body.email
+            if(req.body.email == undefined || req.body.email === ""){
+                updateEmail = "";
+            }
+            else if (req.body.email && emailRegex.test(req.body.email)){
+                updateEmail = req.body.email;
             }
             else{
                 return res.status(403).send({
@@ -359,6 +452,7 @@ exports.updateUser = CatchAsyncError(async (req,res,next)=>{
                     message:"invalid email"
                 });
             }
+
             if(req.body.password == undefined) {
                 updatePassword = returnUser[0].password;
             }
@@ -374,12 +468,12 @@ exports.updateUser = CatchAsyncError(async (req,res,next)=>{
 
             //Update user
             const result = await AccountRepository.updateUserEmailPassword(updateEmail, updatePassword, u.username);
+            console.log(result);
             if(result){
                 return res.status(200).send({
                     success: true
                 });
             }
-            
         }
         return res.status(500).send({
             success: false
@@ -387,21 +481,51 @@ exports.updateUser = CatchAsyncError(async (req,res,next)=>{
     }
     catch(err){
         return res.status(500).send({
-            success: false
+            success: false,
+            err:err
         }); 
     }
 
 }) 
 
-//POST : admin change user email/password/status/group || URL : /admin/update/user
+//POST : admin change user email/password/status/group || URL : /admin/update/user || checkgroup
 exports.adminUpdateUser = CatchAsyncError(async (req,res,next)=>{
-
+     //CheckGroup
+     if(!req.body.un || !req.body.gn){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
+    const checkGroupR = await checkGroup(req.body.un, req.body.gn);
+    if(!checkGroupR){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
     try{
         //retrieve the fields from req
         let email, password, status, group, username, groupArray;
-        const passRegex = /(?=.*?[\w])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,10}/
+        const passRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+[\]{}|\\:;"'<>,.?/~]).{8,10}$/
         const emailRegex = /^\S+@\S+\.\S+$/
 
+        //return error if email and password regex doesn't match
+        if(req.body.email && !emailRegex.test(req.body.email)){
+            return res.status(500).send({
+                success:false,
+                message:"invalid email"
+            });
+        }
+        console.log(passRegex.test(req.body.password))
+        if(req.body.password && !passRegex.test(req.body.password)){
+            return res.status(500).send({
+                success:false,
+                message:"invalid password"
+            });
+        }
+
+        //Check if email, password, status, groups and username is valid
         if(req.body.email && emailRegex.test(req.body.email)) email = req.body.email;
         if(req.body.password && passRegex.test(req.body.password)) password = await passwordEncryption(req.body.password);
         if(req.body.status && (req.body.status != 1 || req.body.status != 0)) status = req.body.status;
@@ -419,8 +543,11 @@ exports.adminUpdateUser = CatchAsyncError(async (req,res,next)=>{
         //Check email, password, status 
         if(!password) password = returnUser[0].password;
         if(!status) status = returnUser[0].status;
-        if(!email) status = returnUser[0].email;
-        
+        if(!email) email = returnUser[0].email;
+
+        //Overwrite admin status
+        if(username === "admin") status = 1;
+
         //Update user
         const updateUserResult = await AccountRepository.adminUpdateEmailPasswordStatus(email, password, returnUser[0].username, status);
         if(!updateUserResult){
@@ -436,7 +563,7 @@ exports.adminUpdateUser = CatchAsyncError(async (req,res,next)=>{
              //Check if current user is cookie user && if cookie current user is in admin
             const token = req.cookies.authToken;
             const decoded = jwt.verify(token, process.env.SECRET_KEY);
-            if(decoded.username == returnUser[0].username){
+            if(decoded.username == returnUser[0].username || returnUser[0].username == "admin"){
                 const deleteGroupResult = await GroupRepository.deleteAllGroupsByUsernameWOadmin(username);
                 if(!deleteGroupResult){
                     return res.status(500).send({
@@ -498,11 +625,33 @@ exports.adminUpdateUser = CatchAsyncError(async (req,res,next)=>{
 
 //POST : admin get user profile || URL : /admin/user/profile
 exports.adminGetUserProfile = CatchAsyncError(async(req,res,next)=>{
+     //CheckGroup
+     if(!req.body.un || !req.body.gn){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
+    const checkGroupR = await checkGroup(req.body.un, req.body.gn);
+    if(!checkGroupR){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
+
+    //Check if req.body.username is null
+    if(!req.body.username){
+        return res.status(500).send({
+            success:false,
+            message:"username undefined"
+        });
+    }
+
     //Get user (username, email, status, groups)
     const returnUser = await AccountRepository.getAccountByUsername(req.body.username);
-    
     //Return Error if user not exist 
-    if(!returnUser){
+    if(!returnUser[0].username){
         return res.status(500).send({
             success:false,
             message:"User not exist"
@@ -542,13 +691,14 @@ exports.getUserProfile = CatchAsyncError(async(req,res,next)=>{
         //Get user 
         const returnUser = await AccountRepository.getAccountByUsername(decoded.username);
         //Get user group
-        const returnGroup = await GroupRepository.getAllGroupNameByUsername(decoded.username);
-        if(returnUser && returnGroup){
+        const returnGroups = await GroupRepository.getAllGroupNameByUsername(decoded.username);
+        if(returnUser && returnGroups){
             return res.status(200).send({
                 success:true,
                 username:returnUser[0].username,
                 status:returnUser[0].status,
-                email:returnUser[0].email
+                email:returnUser[0].email,
+                groups:returnGroups
             });
         }
     }
@@ -557,6 +707,21 @@ exports.getUserProfile = CatchAsyncError(async(req,res,next)=>{
 
 //POST : admin get all groups || URL : /allgroups
 exports.adminGetAllGroups = CatchAsyncError(async(req, res,next)=>{
+     //CheckGroup
+     if(!req.body.un || !req.body.gn){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
+    const checkGroupR = await checkGroup(req.body.un, req.body.gn);
+    if(!checkGroupR){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
+
     //Get all groups and return 
     const allGroups = await GroupRepository.getAllGroups();
 

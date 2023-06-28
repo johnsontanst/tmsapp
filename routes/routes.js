@@ -24,14 +24,13 @@ const {
 
 //Import authentication & checkgroup middleware
 const {loginAuthentication} = require('../middleware/authentication');
-const {checkGroup} = require('../middleware/checkGroup');
 
 
-//ROUTE: Register new account
-router.route('/register').post(newAccountC);
+//ROUTE: Register new account || checkgroup
+router.route('/register').post(loginAuthentication, newAccountC); 
 
-//ROUTE: Register new group
-router.route('/register/group').post(loginAuthentication, checkGroup('admin'), newGroupC);
+//ROUTE: Register new group || checkgroup
+router.route('/register/group').post(loginAuthentication, newGroupC);
 
 //ROUTE: Login
 router.route('/login').post(loginC);
@@ -45,23 +44,23 @@ router.route('/add/usertogroup').post(addUserToGroupC);
 //ROUTE: auth token check role and return user info
 router.route('/authtoken/return/userinfo').post(authTokenCheckRole);
 
-//ROUTE: Get all users (Only admins)
-router.route('/allusers').post(loginAuthentication, checkGroup('admin'),allUsersC);
+//ROUTE: Get all users (Only admins) || checkgroup
+router.route('/allusers').post(loginAuthentication, allUsersC);
 
-//ROUTE: User chaange email/password
+//ROUTE: User change email/password
 router.route('/update/user').post(loginAuthentication, updateUser);
 
 //ROUTE: Get user profile 
 router.route('/profile').post(loginAuthentication, getUserProfile);
 
-//ROUTE: Admin get user profiles
-router.route('/admin/user/profile').post(loginAuthentication, checkGroup('admin'), adminGetUserProfile);
+//ROUTE: Admin get user profiles || checkgroup
+router.route('/admin/user/profile').post(loginAuthentication, adminGetUserProfile); 
 
-//ROUTE: Admin modify user email/password/status/group
-router.route('/admin/update/user').post(loginAuthentication, checkGroup('admin'), adminUpdateUser);
+//ROUTE: Admin modify user email/password/status/group || checkgroup
+router.route('/admin/update/user').post(loginAuthentication, adminUpdateUser); 
 
-//ROUTE: Admin get all groups (Only admins)
-router.route('/allgroups').post(loginAuthentication, checkGroup('admin'), adminGetAllGroups);
+//ROUTE: Admin get all groups (Only admins) || checkgroup
+router.route('/allgroups').post(loginAuthentication, adminGetAllGroups);
 
 //Test route
 router.route('/temp').post(loginAuthentication, temprotected);
