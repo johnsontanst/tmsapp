@@ -38,8 +38,8 @@ router.route('/login').post(loginC);
 //ROUTE: Logout user
 router.route('/logout').post(logoutC);
 
-//ROUTE: Add user into group
-router.route('/add/usertogroup').post(addUserToGroupC);
+//ROUTE: Add user into group || NOT IN USED
+//router.route('/add/usertogroup').post(addUserToGroupC);
 
 //ROUTE: auth token check role and return user info
 router.route('/authtoken/return/userinfo').post(authTokenCheckRole);

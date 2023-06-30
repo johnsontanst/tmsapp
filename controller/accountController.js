@@ -189,8 +189,7 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
                 success:true,
                 username: returnUser[0].username,
                 groups: groupArray,
-                userip:userip,
-                useragent:useragent
+                status: returnUser[0].status
                 
             });
         }
@@ -230,9 +229,8 @@ exports.newGroupC = CatchAsyncError(async (req,res,next)=>{
     //regex for groupName
     const groupNameRegex = /^[A-Za-z0-9]+$/
     
-
     //Check for group name
-    if(req.body.groupName && req.body.groupName != "" && groupNameRegex.test(groupNameRegex)){
+    if(req.body.groupName && req.body.groupName != "" && groupNameRegex.test(req.body.groupName)){
         try{
             const result = await GroupRepository.newGroup(req.body.groupName);
             if(result){
@@ -253,7 +251,7 @@ exports.newGroupC = CatchAsyncError(async (req,res,next)=>{
     }
 });
 
-//POST : add user into group || URL : /add/usertogroup
+//POST : add user into group || URL : /add/usertogroup || checkgroup
 exports.addUserToGroupC = CatchAsyncError(async (req, res, next)=>{
     //validate account id and group id
     const returnUser = await AccountRepository.getAccountByUsername(req.body.username);
@@ -261,9 +259,15 @@ exports.addUserToGroupC = CatchAsyncError(async (req, res, next)=>{
     if(returnUser[0], returnGroup[0]){
         try{
             const result = GroupRepository.addAccountToGroup(returnUser[0].username, returnGroup[0].groupName);
-            return res.status(201).send({
-                success:true,
-                message:"user added into group"
+            if(result){
+                return res.status(201).send({
+                    success:true,
+                    message:"user added into group"
+                });
+            }
+            return res.status(500).send({
+                success:false,
+                message:"Error in adding users to group"
             });
         }
         catch(err){
@@ -344,7 +348,8 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
         return res.status(200).send({
             success:true,
             username:returnUser[0].username,
-            groups:groupArray
+            groups:groupArray,
+            status: returnUser[0].status
         })
     }
     else if(returnUser.length >= 1){
@@ -468,7 +473,7 @@ exports.updateUser = CatchAsyncError(async (req,res,next)=>{
 
             //Update user
             const result = await AccountRepository.updateUserEmailPassword(updateEmail, updatePassword, u.username);
-            console.log(result);
+
             if(result){
                 return res.status(200).send({
                     success: true
@@ -517,7 +522,7 @@ exports.adminUpdateUser = CatchAsyncError(async (req,res,next)=>{
                 message:"invalid email"
             });
         }
-        console.log(passRegex.test(req.body.password))
+
         if(req.body.password && !passRegex.test(req.body.password)){
             return res.status(500).send({
                 success:false,
@@ -623,7 +628,7 @@ exports.adminUpdateUser = CatchAsyncError(async (req,res,next)=>{
     }
 });
 
-//POST : admin get user profile || URL : /admin/user/profile
+//POST : admin get user profile || URL : /admin/user/profile || checkgroup
 exports.adminGetUserProfile = CatchAsyncError(async(req,res,next)=>{
      //CheckGroup
      if(!req.body.un || !req.body.gn){
