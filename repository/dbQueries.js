@@ -9,9 +9,9 @@ var create_accountGroupRelation_table_query = "CREATE TABLE IF NOT EXISTS accoun
 
 
 //Account queries
-var create_account_query = "INSERT INTO accounts (username, password, email) VALUES(?,?,?);"
+var create_account_query = "INSERT INTO accounts (username, password, email, status) VALUES(?,?,?,?);"
 
-var create_account_without_email_query = "INSERT INTO accounts (username, password) VALUES(?,?);"
+var create_account_without_email_query = "INSERT INTO accounts (username, password, status) VALUES(?,?,?);"
 
 var get_account_by_email_query = "SELECT * FROM accounts where email=?;"
 
@@ -24,7 +24,7 @@ var update_account_emailPassword_query = "UPDATE accounts SET password=?, email=
 var admin_update_user_account_query = "UPDATE accounts SET password=?, email=?, status=? WHERE username=?;"
 
 var get_all_users_query = "SELECT * FROM accounts;"
-
+//END Account QUERY
 //Group queries
 var create_group_query = "INSERT INTO accGroups (groupName) VALUES(?);"
 
@@ -50,6 +50,36 @@ var check_user_in_group_query = "SELECT * FROM accountsgroup WHERE fk_groupName 
 
 var get_pivot_groupsNusers_query = "SELECT * FROM accountsgroup;"
 
+//END Group QUERY
+//Application
+var create_application_query = "INSERT INTO application (App_Acronym, AppDescription, App_Rnumber, App_startDate, App_endDate, App_permit_Open, App_permit_toDoList, App_permit_Doing, App_permit_Done) VALUES(?,?,?,?,?,?,?,?,?);"
+
+var get_all_application_query = "SELECT * FROM application;"
+
+var update_
+
+//END Apllication QUERY
+//Plan
+
+var create_plan_query = "INSERT INTO plan (Plan_MVP_name, Plan_startDate, Plan_endDate, Plan_app_acronym, colour) VALUES(?,?,?,?,?);"
+
+var get_all_plan_by_app_query = "SELECT * FROM plan WHERE Plan_app_acronym = ?;"
+
+
+
+//END Plan QUERY
+//Task
+var create_task_query = "INSERT INTO task (Task_name, Task_description, Task_notes, Task_id, Task_plan, Task_app_Acronym, Task_state, Task_creator, Task_owner, Task_createDate) VALUES(?,?,?,?,?,?,?,?,?,?);"
+
+var get_task_by_app_query = "SELECT * FROM task WHERE Taks_app_Acronym = ?;"
+
+var get_task_by_plan_query = "SELECT * FROM task WHERE Task_plan = ?;"
+
+var get_task_by_task_name_query = "SELECT * FROM task WHERE Task_name = ?;"
+
+
+//END Task QUERY
+
 module.exports = {
     "create_user_table_query" :create_user_table_query,
     "alter_user_table_query" : alter_user_table_query,
@@ -74,6 +104,13 @@ module.exports = {
     "check_user_in_group_query" : check_user_in_group_query,
     "get_all_users_query" : get_all_users_query,
     "get_pivot_groupsNusers_query" : get_pivot_groupsNusers_query,
-    "delete_all_groups_by_username" : delete_all_groups_by_username
-
+    "delete_all_groups_by_username" : delete_all_groups_by_username,
+    "create_application_query" : create_application_query,
+    "get_all_application_query" : get_all_application_query,
+    "create_plan_query" : create_plan_query,
+    "get_all_plan_by_app_query" : get_all_plan_by_app_query,
+    "create_task_query" : create_task_query,
+    "get_task_by_app_query" : get_task_by_app_query,
+    "get_task_by_plan_query" : get_task_by_plan_query,
+    "get_task_by_task_name_query": get_task_by_task_name_query,
 }

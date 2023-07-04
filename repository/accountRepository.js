@@ -16,18 +16,18 @@ const {
 
 class accountRepository{
 
-    static newAccount(username, password, email){
+    static newAccount(username, password, email, status){
         return new Promise((resolve, reject)=>{
-            conn.execute(create_account_query, [username, password, email], (err)=>{
+            conn.execute(create_account_query, [username, password, email, status], (err)=>{
                 if(err) reject(err);
                 resolve(true);
             })
         })
     }
     
-    static newAccountWithoutEmail(username, password){
+    static newAccountWithoutEmail(username, password, status){
         return new Promise((resolve, reject)=>{
-            conn.execute(create_account_without_email_query, [username, password], (err)=>{
+            conn.execute(create_account_without_email_query, [username, password, status], (err)=>{
                 if(err) reject(err);
                 resolve(true);
             })

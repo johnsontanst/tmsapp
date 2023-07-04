@@ -43,20 +43,12 @@ CREATE TABLE `application` (
   `App_Rnumber` int DEFAULT NULL,
   `App_startDate` date DEFAULT NULL,
   `App_endDate` date DEFAULT NULL,
-  `App_permit_Open` varchar(255) DEFAULT NULL,
-  `App_permit_toDoList` varchar(255) DEFAULT NULL,
-  `App_permit_Doing` varchar(255) DEFAULT NULL,
-  `App_permit_Done` varchar(255) DEFAULT NULL,
+  `App_permit_Open` long DEFAULT NULL,
+  `App_permit_toDoList` long DEFAULT NULL,
+  `App_permit_Doing` long DEFAULT NULL,
+  `App_permit_Done` long DEFAULT NULL,
   PRIMARY KEY (`App_Acronym`),
   UNIQUE KEY `App_Acronym` (`App_Acronym`),
-  KEY `App_permit_Open` (`App_permit_Open`),
-  KEY `App_permit_toDoList` (`App_permit_toDoList`),
-  KEY `App_permit_Doing` (`App_permit_Doing`),
-  KEY `App_permit_Done` (`App_permit_Done`),
-  CONSTRAINT `application_ibfk_1` FOREIGN KEY (`App_permit_Open`) REFERENCES `accgroups` (`groupName`),
-  CONSTRAINT `application_ibfk_2` FOREIGN KEY (`App_permit_toDoList`) REFERENCES `accgroups` (`groupName`),
-  CONSTRAINT `application_ibfk_3` FOREIGN KEY (`App_permit_Doing`) REFERENCES `accgroups` (`groupName`),
-  CONSTRAINT `application_ibfk_4` FOREIGN KEY (`App_permit_Done`) REFERENCES `accgroups` (`groupName`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 

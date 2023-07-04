@@ -64,7 +64,7 @@ exports.newAccountC = CatchAsyncError( async (req, res, next)=>{
         try{
             //Insert account based on email 
             if(req.body.email){
-                const user = await AccountRepository.newAccount(req.body.username, await passwordEncryption(req.body.password), req.body.email);
+                const user = await AccountRepository.newAccount(req.body.username, await passwordEncryption(req.body.password), req.body.email, req.body.status);
                 if(user){
                     //Link user to groups
                     if(req.body.groups.length != 0){
@@ -97,7 +97,7 @@ exports.newAccountC = CatchAsyncError( async (req, res, next)=>{
                 //END USER CREATION
             }
             else{
-                const user = await AccountRepository.newAccountWithoutEmail(req.body.username, await passwordEncryption(req.body.password));
+                const user = await AccountRepository.newAccountWithoutEmail(req.body.username, await passwordEncryption(req.body.password), req.body.status);
                 if(user){
                     //Link user to groups
                     if(req.body.groups.length != 0){
@@ -548,7 +548,7 @@ exports.adminUpdateUser = CatchAsyncError(async (req,res,next)=>{
         //Check email, password, status 
         if(!password) password = returnUser[0].password;
         if(!status) status = returnUser[0].status;
-        if(!email) email = returnUser[0].email;
+        if(!email) email = null;
 
         //Overwrite admin status
         if(username === "admin") status = 1;
