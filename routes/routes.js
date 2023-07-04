@@ -26,6 +26,8 @@ const {
 const {loginAuthentication} = require('../middleware/authentication');
 
 
+/* Account ROUTES */
+
 //ROUTE: Register new account || checkgroup
 router.route('/register').post(loginAuthentication, newAccountC); 
 
@@ -61,6 +63,13 @@ router.route('/admin/update/user').post(loginAuthentication, adminUpdateUser);
 
 //ROUTE: Admin get all groups (Only admins) || checkgroup
 router.route('/allgroups').post(loginAuthentication, adminGetAllGroups);
+
+/* END */
+/* Application, Plan, Task ROUTES */
+
+
+
+/* END */
 
 //Test route
 router.route('/temp').post(loginAuthentication, temprotected);

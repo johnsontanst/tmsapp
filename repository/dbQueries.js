@@ -52,11 +52,12 @@ var get_pivot_groupsNusers_query = "SELECT * FROM accountsgroup;"
 
 //END Group QUERY
 //Application
-var create_application_query = "INSERT INTO application (App_Acronym, AppDescription, App_Rnumber, App_startDate, App_endDate, App_permit_Open, App_permit_toDoList, App_permit_Doing, App_permit_Done) VALUES(?,?,?,?,?,?,?,?,?);"
+var create_application_query = "INSERT INTO application (App_Acronym, App_Description, App_Rnumber, App_startDate, App_endDate, App_permit_Open, App_permit_toDoList, App_permit_Doing, App_permit_Done) VALUES(?,?,?,?,?,?,?,?,?);"
 
 var get_all_application_query = "SELECT * FROM application;"
 
-var update_
+var get_app_by_app_acronym_query = "SELECT * FROM application WHERE App_Acronym=?;"
+
 
 //END Apllication QUERY
 //Plan
@@ -64,7 +65,6 @@ var update_
 var create_plan_query = "INSERT INTO plan (Plan_MVP_name, Plan_startDate, Plan_endDate, Plan_app_acronym, colour) VALUES(?,?,?,?,?);"
 
 var get_all_plan_by_app_query = "SELECT * FROM plan WHERE Plan_app_acronym = ?;"
-
 
 
 //END Plan QUERY
@@ -76,6 +76,10 @@ var get_task_by_app_query = "SELECT * FROM task WHERE Taks_app_Acronym = ?;"
 var get_task_by_plan_query = "SELECT * FROM task WHERE Task_plan = ?;"
 
 var get_task_by_task_name_query = "SELECT * FROM task WHERE Task_name = ?;"
+
+var update_task_query = "UPDATE task SET Task_notes=?, Task_plan=?, Task_owner=? WHERE Task_name=?;"
+
+var update_task_state_query = "UPDATE task SET Task_state=? WHERE Task_name=?;"
 
 
 //END Task QUERY
@@ -113,4 +117,7 @@ module.exports = {
     "get_task_by_app_query" : get_task_by_app_query,
     "get_task_by_plan_query" : get_task_by_plan_query,
     "get_task_by_task_name_query": get_task_by_task_name_query,
+    "update_task_query" : update_task_query,
+    "update_task_state_query" : update_task_state_query,
+    "get_app_by_app_acronym_query" : get_app_by_app_acronym_query,
 }
