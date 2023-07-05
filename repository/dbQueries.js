@@ -58,6 +58,8 @@ var get_all_application_query = "SELECT * FROM application;"
 
 var get_app_by_app_acronym_query = "SELECT * FROM application WHERE App_Acronym=?;"
 
+var update_app_Rnumber_query = "UPDATE application SET App_Rnumber = ? WHERE App_Acronym = ?;"
+
 
 //END Apllication QUERY
 //Plan
@@ -66,18 +68,22 @@ var create_plan_query = "INSERT INTO plan (Plan_MVP_name, Plan_startDate, Plan_e
 
 var get_all_plan_by_app_query = "SELECT * FROM plan WHERE Plan_app_acronym = ?;"
 
+var get_plan_by_plan_name_query = "SELECT * FROM plan WHERE Plan_MVP_name = ?;"
+
+var get_plan_by_planName_app_query = "SELECT * FROM plan WHERE Plan_MVP_name=? AND Plan_app_Acronym =?;"
+
 
 //END Plan QUERY
 //Task
 var create_task_query = "INSERT INTO task (Task_name, Task_description, Task_notes, Task_id, Task_plan, Task_app_Acronym, Task_state, Task_creator, Task_owner, Task_createDate) VALUES(?,?,?,?,?,?,?,?,?,?);"
 
-var get_task_by_app_query = "SELECT * FROM task WHERE Taks_app_Acronym = ?;"
+var get_task_by_app_query = "SELECT * FROM task WHERE Task_app_Acronym = ?;"
 
 var get_task_by_plan_query = "SELECT * FROM task WHERE Task_plan = ?;"
 
 var get_task_by_task_name_query = "SELECT * FROM task WHERE Task_name = ?;"
 
-var update_task_query = "UPDATE task SET Task_notes=?, Task_plan=?, Task_owner=? WHERE Task_name=?;"
+var update_task_query = "UPDATE task SET Task_state=? Task_notes=?, Task_plan=?, Task_owner=? WHERE Task_id=?;"
 
 var update_task_state_query = "UPDATE task SET Task_state=? WHERE Task_name=?;"
 
@@ -112,7 +118,7 @@ module.exports = {
     "create_application_query" : create_application_query,
     "get_all_application_query" : get_all_application_query,
     "create_plan_query" : create_plan_query,
-    "get_all_plan_by_app_query" : get_all_plan_by_app_query,
+    "get_all_plan_by_app_query" : get_all_plan_by_app_query, 
     "create_task_query" : create_task_query,
     "get_task_by_app_query" : get_task_by_app_query,
     "get_task_by_plan_query" : get_task_by_plan_query,
@@ -120,4 +126,7 @@ module.exports = {
     "update_task_query" : update_task_query,
     "update_task_state_query" : update_task_state_query,
     "get_app_by_app_acronym_query" : get_app_by_app_acronym_query,
+    "get_plan_by_plan_name_query" : get_plan_by_plan_name_query,
+    "update_app_Rnumber_query" : update_app_Rnumber_query,
+    "get_plan_by_planName_app_query" : get_plan_by_planName_app_query,
 }

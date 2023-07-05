@@ -17,7 +17,7 @@ class planRepository{
     static createTask(taskName, taskDescription, taskNotes, taskId, taskPlan, taskApp, taskState, taskCreator, taskOwner, startDate){
         return new Promise((resolve, reject)=>{
             conn.execute(create_task_query, [taskName, taskDescription, taskNotes, taskId, taskPlan, taskApp, taskState, taskCreator,taskOwner, startDate], (err)=>{
-                if(err) return err;
+                if(err) reject(err);
                 resolve(true);
             })
         });
@@ -26,7 +26,7 @@ class planRepository{
     static getTaskByApp(acronym){
         return new Promise((resolve, reject)=>{
             conn.execute(get_task_by_app_query, [acronym], (err, data)=>{
-                if(err) return err;
+                if(err) reject(err);
                 resolve(data);
             })
         });
@@ -35,7 +35,7 @@ class planRepository{
     static getTaskByPlan(planName){
         return new Promise((resolve, reject)=>{
             conn.execute(get_task_by_plan_query, [planName], (err, data)=>{
-                if(err) return err;
+                if(err) reject(err);
                 resolve(data);
             })
         });
@@ -44,16 +44,16 @@ class planRepository{
     static getTaskByTaskName(taskName){
         return new Promise((resolve, reject)=>{
             conn.execute(get_task_by_task_name_query, [taskName], (err, data)=>{
-                if(err) return err;
+                if(err) reject(err);
                 resolve(data);
             })
         });
     }
 
-    static updateTask(taskNotes, taskPlan, taskOwner, taskName){
+    static updateTask(taskNotes, taskPlan, taskOwner, taskId, taskState){
         return new Promise((resolve, reject)=>{
-            conn.execute(update_task_query, [taskNotes, taskPlan, taskOwner, taskName], (err)=>{
-                if(err) return err;
+            conn.execute(update_task_query, [taskState, taskNotes, taskPlan, taskOwner, taskId], (err)=>{
+                if(err) reject(err);
                 resolve(true);
             })
         });
@@ -62,7 +62,7 @@ class planRepository{
     static updateTaskState(taskState){
         return new Promise((resolve, reject)=>{
             conn.execute(update_task_state_query, [taskState], (err)=>{
-                if(err) return err;
+                if(err) reject(err);
                 resolve(true);
             })
         });

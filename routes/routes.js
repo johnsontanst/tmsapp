@@ -22,6 +22,18 @@ const {
 
     } = require('../controller/accountController');
 
+const{
+    createApplication,
+    createPlan,
+    createTask,
+    getAllApp,
+    getPlanByApp,
+    getTaskByApp,
+    getTaskByPlan,
+    getTaskByTaskName,
+
+} = require("../controller/appController")
+
 //Import authentication & checkgroup middleware
 const {loginAuthentication} = require('../middleware/authentication');
 
@@ -67,7 +79,29 @@ router.route('/allgroups').post(loginAuthentication, adminGetAllGroups);
 /* END */
 /* Application, Plan, Task ROUTES */
 
+//ROUTE: Project leader create application || checkgroup
+router.route('/create-application').post(createApplication);
 
+//ROUTE: Project manager create plan || checkgroup
+router.route('/create-plan').post(createPlan);
+
+//ROUTE: Project leader create task || checkgroup
+router.route('/create-task').post(createTask);
+
+//ROUTE: Project leader get all apps || checkgroup
+router.route('/all-application').post(getAllApp);
+
+//ROUTE: PL, PM, DT get plans based on Apps || checkgroup
+router.route('/all-plan/app').post(getPlanByApp);
+
+//ROUTE: PL, PM, DT get tasks based on Apps || checkgroup
+router.route('/all-task/app').post(getTaskByApp);
+
+//ROUTE: PL, PM, DT get tasks based on Plan || checkgroup
+router.route('/all-task/plan').post(getTaskByPlan);
+
+//ROUTE: PL, PM, DT get tasks based on Task name || checkgroup
+router.route('/task/task-name').post(getTaskByTaskName);
 
 /* END */
 
