@@ -8,11 +8,12 @@ const {
     get_task_by_plan_query,
     get_task_by_task_name_query,
     update_task_query,
-    update_task_state_query
+    update_task_state_query,
+    get_task_by_task_id_query
 } = require('./dbQueries');
 
 
-class planRepository{
+class taskRepository{
 
     static createTask(taskName, taskDescription, taskNotes, taskId, taskPlan, taskApp, taskState, taskCreator, taskOwner, startDate){
         return new Promise((resolve, reject)=>{
@@ -50,6 +51,15 @@ class planRepository{
         });
     }
 
+    static getTaskByTaskId(taskId){
+        return new Promise((resolve, reject)=>{
+            conn.execute(get_task_by_task_id_query, [taskId], (err, data)=>{
+                if(err) reject(err);
+                resolve(data);
+            })
+        });
+    }
+
     static updateTask(taskNotes, taskPlan, taskOwner, taskId, taskState){
         return new Promise((resolve, reject)=>{
             conn.execute(update_task_query, [taskState, taskNotes, taskPlan, taskOwner, taskId], (err)=>{
@@ -71,4 +81,4 @@ class planRepository{
 }
 
 
-module.exports = planRepository;
+module.exports = taskRepository;

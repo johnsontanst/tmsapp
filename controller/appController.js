@@ -467,7 +467,7 @@ exports.getTaskByTaskName = CatchAsyncError(async(req,res,next)=>{
 });
 
 //POST : Project leader update task || URL : /update/task || Checkgroup
-//INPUT: taskName, un, gn, userNotes, taskState, acronym
+//INPUT: taskId, un, gn, userNotes, taskState, acronym
 exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
     //Checkgroup
 
@@ -475,13 +475,13 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
     var taskNotes;
 
     //Check task state 
-    if(!req.body.taskName){
+    if(!req.body.taskId){
         return res.status(200).send({
             success:false,
-            message:"invalid task name"
+            message:"invalid task id"
         });
     }
-    const taskResult = await TaskRepository.getTaskByTaskName(req.body.taskName);
+    const taskResult = await TaskRepository.getTaskByTaskId(req.body.taskId);
     if(!taskResult[0].Task_name){
         return res.status(200).send({
             success:false,
@@ -493,19 +493,6 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
             success:false,
             message:"unable to edit task"
         })
-    }
-
-    //Get & check valid fields 
-    //Add notes
-    taskNotes = taskResult[0].Task_notes;
-    //System generate notes
-    var today = new Date()
-    tempSystemNotes = "system|" + taskResult[0].Task_state + "|" + today.toISOString();
-    taskNotes.concat(",", tempSystemNotes);
-    //User add notes if exist 
-    if(req.body.userNotes){
-        tempUserNotes = req.body.un + "|" + taskResult[0].Task_state + "|" + today.toISOString();
-        taskNotes.concat(",", tempUserNotes);
     }
 
     //Edit state
@@ -535,7 +522,21 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
         return res.status(200).send({
             success:false,
             message:"invalid plan"
-        });res
+        });
+    }
+
+    //Get & check valid fields 
+    //Add notes
+    taskNotes = taskResult[0].Task_notes;
+    //System generate notes
+    var today = new Date()
+    updateStateNotes = "Updated task stated: " + req.body.taskState + "|User: " + req.body.un;
+    tempSystemNotes = "system|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + updateStateNotes;
+    taskNotes.concat("||", tempSystemNotes);
+    //User add notes if exist 
+    if(req.body.userNotes){
+        tempUserNotes = req.body.un + "|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + tempUserNotes;
+        taskNotes.concat("||", tempUserNotes);
     }
 
 
@@ -564,16 +565,221 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
 });
 
 //POST : Project manager update task || URL : /update/task || Checkgroup
+//INPUT: taskId, un, gn, taskState, userNotes, acronym, devTeam, devInGroupName
 exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
-    
+    //checkgroup
+
+
+    //Fields require to be change
+    var updateTaskPlan, taskNotes, updateOwner
+    //check task state
+    if(!req.body.taskId){
+        return res.status(200).send({
+            success:false,
+            message:"invalid task id"
+        });
+    }
+    const taskResult = await TaskRepository.getTaskByTaskId(req.body.taskId);
+    if(!taskResult[0].Task_name){
+        return res.status(200).send({
+            success:false,
+            message:"invalid task id"
+        });
+    }
+    if(taskResult[0].Task_state != "open"){
+        return res.status(200).send({
+            success:false,
+            message:"unable to access task"
+        });
+    }
+
+    //Get & check fields
+    //Change state
+    if(!req.body.taskState){
+        return res.status(200).send({
+            success:false,
+            message:"invalid task state"
+        });
+    }
+    if(req.body.taskState != "open"){
+        return res.status(200).send({
+            success:false,
+            message:"unable to update task state"
+        });
+    }
+
+    //Change owner
+    if(req.body.devTeam && req.body.devInGroupName && req.body.taskState === "todo"){
+        //Check if devTeam member exist in the group KIV!!!!!!
+        const checkDevTeam = await checkGroup(req.body.devTeam, req.body.devInGroupName);
+        if(!checkDevTeam){
+            return res.status(200).send({
+                success:false,
+                message:"dev not in the group"
+            })
+        }
+        updateOwner = req.body.devTeam;
+    }else{
+        if(req.body.taskState === "open"){
+            updateOwner = req.body.un;
+        }else{
+            updateOwner = null;
+        }
+
+        updateOwner = null;
+    }
+
+    //Change task to plan if any
+    if(req.body.taskPlan != taskResult[0].Task_plan){
+        //check if plan exist in application
+        const checkPlan = await PlanRepository.getPlanByPlanNameNApp(req.body.taskPlan, req.body.acronym);
+        if(!checkPlan[0].Plan_MVP_name){
+            return res.status(200).send({
+                success:false,
+                message:"invalid plan"
+            });
+        }
+        if(req.body.Task_plan == undefined){
+            updateTaskPlan = null;
+        }else{
+            updateTaskPlan = req.body.taskPlan;
+        }
+    }else{
+        updateTaskPlan = taskResult[0].Task_plan;
+    }
+
+    //Notes 
+    //System generate notes
+    taskNotes = taskResult[0].Task_notes;
+    //System generate notes
+    var today = new Date()
+    updateStateNotes = "Updated task state: " + req.body.taskState + "|User: " + req.body.un;
+    if(req.body.taskPlan != taskResult[0].Task_plan){
+        updateStateNotes.concat("|Update task plan: ", req.body.taskPlan);
+    }
+    tempSystemNotes = "system|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + updateStateNotes;
+    taskNotes.concat("||", tempSystemNotes);
+    //User add notes if exist 
+    if(req.body.userNotes){
+        tempUserNotes = req.body.un + "|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + tempUserNotes;
+        taskNotes.concat("||", tempUserNotes);
+    }
+
+
+    //Update task
+    try{
+        const result = await TaskRepository.updateTask(taskNotes, updateTaskPlan, updateOwner, req.body.taskId, req.body.taskState);
+        if(result){
+            return res.status(200).send({
+                success:true,
+                message:"task updated"
+            });
+        }
+        return res.status(200).send({
+            success:false,
+            message:"error in updating task"
+        });
+    }
+    catch(err){
+        return res.status(200).send({
+            success:false,
+            message:"error in updating task",
+            err: err
+        });
+    }
+
 });
 
 //POST : Team update task || URL : /update/task || Checkgroup
+//INPUT: taskId, un, gn, taskState, userNotes
+exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
+    //checkgroup
 
-//POST : update task state || URL : /update/task/state || Checkgroup
 
-//POST : update application || URL : /update/application || Checkgroup
+    //Fields require to be change
+    var updateTaskState, taskNotes;
+    //Get & check fields 
+    //check if task exist 
+    if(!req.body.taskId){
+        return res.status(200).send({
+            success:false,
+            message:"invalid task id"
+        });
+    }
+    const taskResult = await TaskRepository.getTaskByTaskId(req.body.taskId);
+    if(!taskResult[0].Task_id){
+        return res.status(200).send({
+            success:false,
+            message:"invalid task id"
+        });
+    }
 
-//POST : update plan || URL : /update/plan || Checkgroup
+
+    //check state and set update state
+    if(taskResult[0].Task_state != "todo" || taskResult[0].Task_state != "doing"){
+        return res.status(200).send({
+            success:false,
+            message:"unable to update task"
+        });
+    }
+    if(!req.body.taskState){
+        return res.status(200).send({
+            success:false,
+            message:"invalid task state"
+        });
+    }
+    if(taskResult[0].Task_state === "todo" && req.body.taskState === "done"){
+        return res.status(200).send({
+            success:false,
+            message:"unable to promote todo/done"
+        });
+    }
+    else{
+        updateTaskState = req.body.taskState;
+    }
+
+    //Notes 
+    //System generate notes
+    taskNotes = taskResult[0].Task_notes;
+    //System generate notes
+    var today = new Date()
+    updateStateNotes = "Updated task state: " + req.body.taskState + "|User: " + req.body.un;
+    if(req.body.taskPlan != taskResult[0].Task_plan){
+        updateStateNotes.concat("|Update task plan: ", req.body.taskPlan);
+    }
+    tempSystemNotes = "system|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + updateStateNotes;
+    taskNotes.concat("||", tempSystemNotes);
+    //User add notes if exist 
+    if(req.body.userNotes){
+        tempUserNotes = req.body.un + "|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + tempUserNotes;
+        taskNotes.concat("||", tempUserNotes);
+    }
+
+    //Update task
+    try{
+        const result = await TaskRepository.updateTask(taskNotes, taskResult[0].Task_plan, req.body.un, taskResult[0].Task_id, updateTaskState);
+        if(result){
+            return res.status(200).send({
+                success:true,
+                message:"task updated"
+            })
+        }
+        return res.status(200).send({
+            success:false,
+            message:"error in updating task"
+        })
+    }
+    catch(err){
+        return res.status(200).send({
+            success:false,
+            message:"error in updating task"
+        })
+    }
+
+});
+
+//POST : PL update application || URL : /update/application || Checkgroup
+
+
 
 
