@@ -123,8 +123,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
         if(result){
             return res.status(200).send({
                 success:true,
-                message:"application created",
-                err:result
+                message:"application created"
             });
         }
 
