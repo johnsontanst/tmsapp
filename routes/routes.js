@@ -31,6 +31,11 @@ const{
     getTaskByApp,
     getTaskByPlan,
     getTaskByTaskName,
+    plUpdateTask,
+    pmUpdateTask,
+    teamUpdateTask,
+    plUpdateApp,
+    getAppByAcronym
 
 } = require("../controller/appController")
 
@@ -73,7 +78,7 @@ router.route('/admin/user/profile').post(loginAuthentication, adminGetUserProfil
 //ROUTE: Admin modify user email/password/status/group || checkgroup
 router.route('/admin/update/user').post(loginAuthentication, adminUpdateUser); 
 
-//ROUTE: Admin get all groups (Only admins) || checkgroup
+//ROUTE: Admin get all groups (Only admins, PL, PM, TEAM) || checkgroup
 router.route('/allgroups').post(loginAuthentication, adminGetAllGroups);
 
 /* END */
@@ -91,6 +96,9 @@ router.route('/create-task').post(createTask);
 //ROUTE: Project leader get all apps || checkgroup
 router.route('/all-application').post(getAllApp);
 
+//ROUTE: Project leader get app by app acronym || checkgroup
+router.route('/get-application').post(getAppByAcronym);
+
 //ROUTE: PL, PM, DT get plans based on Apps || checkgroup
 router.route('/all-plan/app').post(getPlanByApp);
 
@@ -102,6 +110,19 @@ router.route('/all-task/plan').post(getTaskByPlan);
 
 //ROUTE: PL, PM, DT get tasks based on Task name || checkgroup
 router.route('/task/task-name').post(getTaskByTaskName);
+
+//ROUTE: PL update task || checkgroup
+router.route('/pl-update/task').post(plUpdateTask);
+
+//ROUTE: PM update task || checkgroup
+router.route('/pm-update/task').post(pmUpdateTask);
+
+//ROUTE: PM update task || checkgroup
+router.route('/team-update/task').post(teamUpdateTask);
+
+//ROUTE: PL update application || checkgroup
+router.route('/update/application').post(plUpdateApp);
+
 
 /* END */
 

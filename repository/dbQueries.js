@@ -60,6 +60,8 @@ var get_app_by_app_acronym_query = "SELECT * FROM application WHERE App_Acronym=
 
 var update_app_Rnumber_query = "UPDATE application SET App_Rnumber = ? WHERE App_Acronym = ?;"
 
+var update_app_query = "UPDATE application SET App_endDate = ?, App_permit_Open=?, App_permit_toDoList=?,App_permit_Doing=?, App_permit_Done=?, App_Description=? WHERE App_Acronym = ?;"
+
 
 //END Apllication QUERY
 //Plan
@@ -85,7 +87,7 @@ var get_task_by_task_name_query = "SELECT * FROM task WHERE Task_name = ?;"
 
 var get_task_by_task_id_query = "SELECT * FROM task WHERE Task_id=?;"
 
-var update_task_query = "UPDATE task SET Task_state=? Task_notes=?, Task_plan=?, Task_owner=? WHERE Task_id=?;"
+var update_task_query = "UPDATE task SET Task_state=?, Task_notes=?, Task_plan=?, Task_owner=? WHERE Task_id=?;"
 
 var update_task_state_query = "UPDATE task SET Task_state=? WHERE Task_name=?;"
 
@@ -131,5 +133,6 @@ module.exports = {
     "get_plan_by_plan_name_query" : get_plan_by_plan_name_query,
     "update_app_Rnumber_query" : update_app_Rnumber_query,
     "get_plan_by_planName_app_query" : get_plan_by_planName_app_query,
-    "get_task_by_task_id_query" : get_task_by_task_id_query
+    "get_task_by_task_id_query" : get_task_by_task_id_query,
+    "update_app_query" : update_app_query,
 }

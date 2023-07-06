@@ -720,6 +720,7 @@ exports.adminGetAllGroups = CatchAsyncError(async(req, res,next)=>{
         });
     }
     const checkGroupR = await checkGroup(req.body.un, req.body.gn);
+    console.log(checkGroupR);
     if(!checkGroupR){
         return res.status(500).send({
             success:false,

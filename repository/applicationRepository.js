@@ -7,6 +7,7 @@ const {
     get_all_application_query,
     get_app_by_app_acronym_query,
     update_app_Rnumber_query,
+    update_app_query,
 } = require('./dbQueries');
 
 
@@ -42,6 +43,15 @@ class applicationRepository{
     static updateRnumber(acronym, rNumber){
         return new Promise((resolve, reject)=>{
             conn.execute(update_app_Rnumber_query, [rNumber, acronym], (err)=>{
+                if(err) reject(err);
+                resolve(true);
+            });
+        })
+    }
+
+    static updateApp(endDate, permitOpen, permitTodo, permitDoing, permitDone, acronym, desc){
+        return new Promise((resolve, reject)=>{
+            conn.execute(update_app_query, [endDate, permitOpen, permitTodo, permitDoing, permitDone, desc, acronym], (err)=>{
                 if(err) reject(err);
                 resolve(true);
             });

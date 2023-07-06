@@ -28,7 +28,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
 
     //Check for mandatory fields 
     if(!req.body.acronym, !req.body.description, !req.body.rnumber, !req.body.startDate, !req.body.endDate){
-        res.status(200).send({
+        res.status(500).send({
             success:false,
             message:"Input require fields"
         });
@@ -41,7 +41,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
         var tempDateArray = String(req.body.startDate).split("-");
         var checkDate = new Date(tempDateArray[0], parseInt(tempDateArray[1])-1, parseInt(tempDateArray[2])+1);
         if(checkDate < today){
-            return res.status(200).send({
+            return res.status(500).send({
                 success:true,
                 message:"invalid start date"
             });
@@ -53,7 +53,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
         var tempEndDateArray = String(req.body.endDate).split("-");
         var tempEndDate = new Date(tempEndDateArray[0], parseInt(tempEndDateArray[1])-1, parseInt(tempEndDateArray[2])+1);
         if(tempStartDate > tempEndDate){
-            return res.status(200).send({
+            return res.status(500).send({
                 success:false,
                 message:"invalid end date"
             });
@@ -64,7 +64,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
         //Check if group exisit 
         const checkOpen = await GroupRepository.getGroupByGroupName(req.body.open);
         if(checkOpen.length == 0){
-            return res.status(200).send({
+            return res.status(500).send({
                 success:false,
                 message:"invalid group open"
             });
@@ -77,7 +77,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
         //Check if group exisit 
         const checkToDo = await GroupRepository.getGroupByGroupName(req.body.toDo);
         if(checkToDo.length == 0){
-            return res.status(200).send({
+            return res.status(500).send({
                 success:false,
                 message:"invalid group toDo"
             });
@@ -91,7 +91,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
         //Check if group exisit 
         const checkDoing = await GroupRepository.getGroupByGroupName(req.body.doing);
         if(checkDoing.length == 0){
-            return res.status(200).send({
+            return res.status(500).send({
                 success:false,
                 message:"invalid group doing"
             });
@@ -105,7 +105,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
         //Check if group exisit 
         const checkDone = await GroupRepository.getGroupByGroupName(req.body.done);
         if(checkDone == 0){
-            return res.status(200).send({
+            return res.status(500).send({
                 success:false,
                 message:"invalid group done"
             });
@@ -128,7 +128,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
             });
         }
 
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"error in creating application"
         });
@@ -136,7 +136,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
 
     }
     catch(err){
-        res.status(200).send({
+        res.status(500).send({
             success:false,
             message:err
         });
@@ -362,6 +362,30 @@ exports.getAllApp = CatchAsyncError(async(req,res,next)=>{
 
 });
 
+//POST : get application by App Acronym || URL : /get-application|| Checkgroup
+exports.getAppByAcronym = CatchAsyncError(async(req,res,next)=>{
+    //checkgroup
+
+    //Get & check the fields
+    if(!req.body.acronym){
+        return res.status(500).send({
+            success:false,
+            message:"App acronym not found"
+        });
+    }
+    const appResult = await ApplicationRepository.getAppByAcronym(req.body.acronym);
+    if(!appResult[0].App_Acronym){
+        return res.status(500).send({
+            success:false,
+            message:"App acronym not found"
+        });
+    }
+    return res.status(200).send({
+        success:true,
+        apps:appResult
+    })
+});
+
 //POST : get all plans by app || URL : /all-plan/app || Checkgroup
 //INPUT: app_Acronym
 exports.getPlanByApp = CatchAsyncError(async(req,res,next)=>{
@@ -466,8 +490,8 @@ exports.getTaskByTaskName = CatchAsyncError(async(req,res,next)=>{
     });
 });
 
-//POST : Project leader update task || URL : /update/task || Checkgroup
-//INPUT: taskId, un, gn, userNotes, taskState, acronym
+//POST : Project leader update task || URL : /pl-update/task || Checkgroup
+//INPUT: taskId, un, gn, userNotes, taskState, acronym, plan
 exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
     //Checkgroup
 
@@ -502,12 +526,16 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
             message:"invalid task state"
         });
     }
-    if(req.body.taskState != "closed" || req.body.taskState != "doing" || req.body.taskState != "done"){
+    if(req.body.taskState === "closed" || req.body.taskState === "doing" || req.body.taskState === "done"){
+        console.log(req.body.taskState)
+    }
+    else{
         return res.status(200).send({
             success:false,
             message:"invalid task state"
         });
     }
+
 
     //edit plan
     if(!req.body.plan){
@@ -527,21 +555,23 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
 
     //Get & check valid fields 
     //Add notes
-    taskNotes = taskResult[0].Task_notes;
+    taskNotes = String(taskResult[0].Task_notes);
     //System generate notes
     var today = new Date()
-    updateStateNotes = "Updated task stated: " + req.body.taskState + "|User: " + req.body.un;
+    updateStateNotes = "Updated task stated:" + req.body.taskState + "|User:" + req.body.un;
     tempSystemNotes = "system|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + updateStateNotes;
-    taskNotes.concat("||", tempSystemNotes);
+    taskNotes = taskNotes.concat("||", tempSystemNotes);
+    console.log(taskNotes);
     //User add notes if exist 
     if(req.body.userNotes){
-        tempUserNotes = req.body.un + "|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + tempUserNotes;
-        taskNotes.concat("||", tempUserNotes);
+        tempUserNotes = req.body.un + "|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + req.body.userNotes;
+        taskNotes = taskNotes.concat("||", tempUserNotes);
     }
 
 
     //Update task 
     try{
+        console.log(taskNotes, checkPlan[0].Plan_MVP_name, req.body.un,taskResult[0].Task_id, req.body.taskState)
         const updateResult = await TaskRepository.updateTask(taskNotes, checkPlan[0].Plan_MVP_name, req.body.un,taskResult[0].Task_id, req.body.taskState);
         if(updateResult){
             return res.status(200).send({
@@ -564,8 +594,8 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
     }
 });
 
-//POST : Project manager update task || URL : /update/task || Checkgroup
-//INPUT: taskId, un, gn, taskState, userNotes, acronym, devTeam, devInGroupName
+//POST : Project manager update task || URL : /pm-update/task || Checkgroup
+//INPUT: taskId, un, gn, taskState, userNotes, acronym, devTeam(optional), devInGroupName(optional)
 exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
     //checkgroup
 
@@ -573,7 +603,7 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
     //Fields require to be change
     var updateTaskPlan, taskNotes, updateOwner
     //check task state
-    if(!req.body.taskId){
+    if(!req.body.taskId ,!req.body.taskPlan, !req.body.acronym){
         return res.status(200).send({
             success:false,
             message:"invalid task id"
@@ -601,38 +631,41 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
             message:"invalid task state"
         });
     }
-    if(req.body.taskState != "open"){
+    if(req.body.taskState === "open" || req.body.taskState === "todo"){
+
+    }
+    else{
         return res.status(200).send({
             success:false,
-            message:"unable to update task state"
+            message:"invalid task state"
         });
     }
 
     //Change owner
-    if(req.body.devTeam && req.body.devInGroupName && req.body.taskState === "todo"){
-        //Check if devTeam member exist in the group KIV!!!!!!
-        const checkDevTeam = await checkGroup(req.body.devTeam, req.body.devInGroupName);
-        if(!checkDevTeam){
-            return res.status(200).send({
-                success:false,
-                message:"dev not in the group"
-            })
-        }
-        updateOwner = req.body.devTeam;
-    }else{
-        if(req.body.taskState === "open"){
-            updateOwner = req.body.un;
-        }else{
-            updateOwner = null;
-        }
-
-        updateOwner = null;
-    }
+    // if(req.body.devTeam && req.body.devInGroupName && req.body.taskState === "todo"){
+    //     //Check if devTeam member exist in the group KIV!!!!!!
+    //     const checkDevTeam = await checkGroup(req.body.devTeam, req.body.devInGroupName);
+    //     if(!checkDevTeam){
+    //         return res.status(200).send({
+    //             success:false,
+    //             message:"dev not in the group"
+    //         })
+    //     }
+    //     updateOwner = req.body.devTeam;
+    // }else{
+    //     if(req.body.taskState === "open"){
+    //         updateOwner = req.body.un;
+    //     }else{
+    //         updateOwner = null;
+    //     }
+    // }
+    // console.log(updateOwner)
 
     //Change task to plan if any
     if(req.body.taskPlan != taskResult[0].Task_plan){
         //check if plan exist in application
         const checkPlan = await PlanRepository.getPlanByPlanNameNApp(req.body.taskPlan, req.body.acronym);
+        console.log(checkPlan);
         if(!checkPlan[0].Plan_MVP_name){
             return res.status(200).send({
                 success:false,
@@ -647,28 +680,31 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
     }else{
         updateTaskPlan = taskResult[0].Task_plan;
     }
+    console.log(updateTaskPlan)
 
     //Notes 
     //System generate notes
     taskNotes = taskResult[0].Task_notes;
     //System generate notes
     var today = new Date()
-    updateStateNotes = "Updated task state: " + req.body.taskState + "|User: " + req.body.un;
+    updateStateNotes = "Updated task state:" + req.body.taskState + "|User:" + req.body.un;
     if(req.body.taskPlan != taskResult[0].Task_plan){
-        updateStateNotes.concat("|Update task plan: ", req.body.taskPlan);
+        updateStateNotes.concat("|Update task plan:", req.body.taskPlan);
     }
     tempSystemNotes = "system|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + updateStateNotes;
-    taskNotes.concat("||", tempSystemNotes);
+    taskNotes = taskNotes.concat("||", tempSystemNotes);
     //User add notes if exist 
     if(req.body.userNotes){
-        tempUserNotes = req.body.un + "|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + tempUserNotes;
-        taskNotes.concat("||", tempUserNotes);
+        console.log(req.body.userNotes);
+        tempUserNotes = req.body.un + "|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + req.body.userNotes;
+        taskNotes = taskNotes.concat("||", tempUserNotes);
     }
 
 
     //Update task
     try{
-        const result = await TaskRepository.updateTask(taskNotes, updateTaskPlan, updateOwner, req.body.taskId, req.body.taskState);
+        console.log(taskNotes, updateTaskPlan, req.body.un, req.body.taskId, req.body.taskState);
+        const result = await TaskRepository.updateTask(taskNotes, updateTaskPlan, req.body.un, req.body.taskId, req.body.taskState);
         if(result){
             return res.status(200).send({
                 success:true,
@@ -690,7 +726,7 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
 
 });
 
-//POST : Team update task || URL : /update/task || Checkgroup
+//POST : Team update task || URL : /team-update/task || Checkgroup
 //INPUT: taskId, un, gn, taskState, userNotes
 exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
     //checkgroup
@@ -779,7 +815,122 @@ exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
 });
 
 //POST : PL update application || URL : /update/application || Checkgroup
+//INPUT: acronym, description, endDate, permitOpen(optional), permitTodo(optional), permitDoing(optional), permitDone(optional)
+exports.plUpdateApp = CatchAsyncError(async(req,res,next)=>{
+    //checkgroup
 
+
+    //fields require to be change
+    var newOpen, newTodo, newDoing, newDone
+    //Check if fields exist
+    if(!req.body.acronym, !req.body.endDate){
+        return res.status(200).send({
+            success:false,
+            message:"invalid inputs"
+        });
+    }
+    const appResult = await ApplicationRepository.getAppByAcronym(req.body.acronym);
+    if(!appResult[0].App_Acronym){
+        return res.status(200).send({
+            success:false,
+            message:"acronym not found"
+        });
+    }
+    //update endDate, check if endDate is not less than the startDate
+    var startDate = appResult[0].App_startDate;
+    var newEndDateArray = String(req.body.endDate).split("-");
+    var newEndDate = new Date(parseInt(newEndDateArray[0]), parseInt(newEndDateArray[1]) - 1, parseInt(newEndDateArray[2]));
+    if(startDate > newEndDate){
+        return res.status(200).send({
+            success:false,
+            message:"End date invalid"
+        });
+    }
+
+    //update app Permit open
+    if(req.body.permitOpen){
+        //check if the group exist 
+        const checkOpen = await GroupRepository.getGroupByGroupName(req.body.permitOpen);
+        if(!checkOpen[0].groupName){
+            return res.status(200).send({
+                success:false,
+                message:"invalid open group"
+            });
+        }
+        newOpen = req.body.permitOpen;
+    }else{
+        newOpen = null;
+    }
+
+    //update app Permit todo
+    if(req.body.permitTodo){
+        //check if the group exist 
+        const checkTodo = await GroupRepository.getGroupByGroupName(req.body.permitTodo);
+        if(!checkTodo[0].groupName){
+            return res.status(200).send({
+                success:false,
+                message:"invalid todo group"
+            });
+        }
+        newTodo = req.body.permitTodo;
+    }else{
+        newTodo = null;
+    }
+
+    //update app Permit doing
+    if(req.body.permitDoing){
+        //check if the group exist 
+        const checkDoing = await GroupRepository.getGroupByGroupName(req.body.permitDoing);
+        if(!checkDoing[0].groupName){
+            return res.status(200).send({
+                success:false,
+                message:"invalid doing group"
+            });
+        }
+        newDoing = req.body.permitDoing;
+    }else{
+        newDoing = null;
+    }
+
+
+    //update app Permit done
+    if(req.body.permitDone){
+        //check if the group exist 
+        const checkDone = await GroupRepository.getGroupByGroupName(req.body.permitDone);
+        if(!checkDone[0].groupName){
+            return res.status(200).send({
+                success:false,
+                message:"invalid done group"
+            });
+        }
+        newDone = req.body.permitDone;
+    }else{
+        newDone = null;
+    }
+
+    //update application
+    try{
+        const result = await ApplicationRepository.updateApp(newEndDate, newOpen, newTodo, newDoing, newDone, appResult[0].App_Acronym, req.body.description);
+        if(result){
+            return res.status(200).send({
+                success:true,
+                message:"application updated"
+            }); 
+        }
+
+        return res.status(200).send({
+            success:false,
+            message:"error in updating application"
+        });
+
+    }catch(err){
+        return res.status(200).send({
+            success:false,
+            message:"error in updating application",
+            err: err
+        });
+    }
+});
 
 
 
