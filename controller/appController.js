@@ -426,6 +426,7 @@ exports.getTaskByApp = CatchAsyncError(async(req,res,next)=>{
             message:"invalid input for app_Acronym"
         });
     }
+    console.log(req.body.app_Acronym);
     const result = await TaskRepository.getTaskByApp(req.body.app_Acronym);
     if(result.length == 0){
         return res.status(200).send({
@@ -823,14 +824,14 @@ exports.plUpdateApp = CatchAsyncError(async(req,res,next)=>{
     var newOpen, newTodo, newDoing, newDone
     //Check if fields exist
     if(!req.body.acronym, !req.body.endDate){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"invalid inputs"
         });
     }
     const appResult = await ApplicationRepository.getAppByAcronym(req.body.acronym);
     if(!appResult[0].App_Acronym){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"acronym not found"
         });
@@ -838,9 +839,9 @@ exports.plUpdateApp = CatchAsyncError(async(req,res,next)=>{
     //update endDate, check if endDate is not less than the startDate
     var startDate = appResult[0].App_startDate;
     var newEndDateArray = String(req.body.endDate).split("-");
-    var newEndDate = new Date(parseInt(newEndDateArray[0]), parseInt(newEndDateArray[1]) - 1, parseInt(newEndDateArray[2]));
+    var newEndDate = new Date(parseInt(newEndDateArray[0]), parseInt(newEndDateArray[1]) - 1, parseInt(newEndDateArray[2])+1);
     if(startDate > newEndDate){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"End date invalid"
         });
