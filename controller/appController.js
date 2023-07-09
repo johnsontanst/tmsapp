@@ -16,6 +16,7 @@ const CatchAsyncError = require('../middleware/catchAsyncError');
 
 //Import Checkgroup
 const {checkGroup} = require('../middleware/checkGroup');
+const catchAsyncError = require("../middleware/catchAsyncError");
 
 
 //POST : create application || URL : /create-application || Checkgroup
@@ -145,7 +146,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
 });
 
 //POST : create plan || URL : /create-plan || Checkgroup
-//INPUT: planName, startDate, endDate, appAcronym(optional), colour
+//INPUT: planName, startDate, endDate, appAcronym, colour
 exports.createPlan = CatchAsyncError(async(req,res,next)=>{
     //Check group
 
@@ -153,9 +154,9 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
     //Get & Check all fields
     var planName, startDate, endDate, appAcronym, colour
     if(!req.body.planName, !req.body.startDate, !req.body.endDate, !req.body.colour, !req.body.appAcronym){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
-            message:"invalid input"
+            message:"missing input"
         });
     }
     //Init planName & Colour
@@ -168,7 +169,7 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
     var tempEndDateArray = String(req.body.endDate).split("-");
     var tempEndDate = new Date(tempEndDateArray[0], parseInt(tempEndDateArray[1])-1, parseInt(tempEndDateArray[2])+1);
     if(tempStartDate > tempEndDate){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"invalid end date"
         });
@@ -192,7 +193,7 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
             tempAppEndDate.setDate(tempAppEndDate.getDate() + 1);
 
             if(tempAppStartDate > tempStartDate || tempAppEndDate < tempEndDate){
-                return res.status(200).send({
+                return res.status(500).send({
                     success:false,
                     message:"date invalid"
                 });
@@ -202,7 +203,7 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
             endDate = req.body.endDate;
         }
         catch(err){
-            return res.status(200).send({
+            return res.status(500).send({
                 success:false,
                 message:"invalid application",
                 err: err
@@ -221,7 +222,7 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
                 message:"plan created"
             });
         }
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"error in creating plan"
         });
@@ -235,7 +236,7 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
 });
 
 //POST : create task || URL : /create-task || Checkgroup
-//INPUT: taskName, taskDescription(optional), taskNotes(optional), taskId(system), taskPlan, taskApp, taskState(system), taskCreator(system), taskOwner(system), createDate(system), un, gn
+//INPUT: taskName, taskDescription(optional), taskNotes(optional), taskId(system), taskPlan, taskApp, taskState(system), taskCreator, taskOwner, createDate(system), un, gn
 exports.createTask = CatchAsyncError(async(req,res,next)=>{
     //Check group
 
@@ -258,10 +259,13 @@ exports.createTask = CatchAsyncError(async(req,res,next)=>{
     systemNotes = "system|open|" + tempNow.toISOString();
     taskNotes = systemNotes;
     if(req.body.taskNotes){
-        notesRegex = /\|/
-        if(notesRegex.tes)
-        userNotes = req.body.username + "|open|" + tempNow.toISOString();
-        taskNotes.concat("||", userNotes);
+        const notesRegex = /\|/
+        if(!notesRegex.test(req.body.taskNotes)){
+            var userNotes = req.body.un + "|open|" + tempNow.toISOString() + "|" + req.body.taskNotes;
+            console.log(userNotes);
+            taskNotes += "||" + userNotes;
+            console.log(taskNotes);
+        }
     }
 
 
@@ -362,6 +366,7 @@ exports.getAllApp = CatchAsyncError(async(req,res,next)=>{
 });
 
 //POST : get application by App Acronym || URL : /get-application|| Checkgroup
+//INPUT: acronym
 exports.getAppByAcronym = CatchAsyncError(async(req,res,next)=>{
     //checkgroup
 
@@ -411,6 +416,33 @@ exports.getPlanByApp = CatchAsyncError(async(req,res,next)=>{
         });
     }
 
+
+});
+
+//POST : get all plans by app || URL : /get-plan/planname|| Checkgroup
+//INPUT: planName
+exports.getPlanByPlanName = CatchAsyncError(async(req,res,next)=>{
+    //check group
+
+    //Get & check fields
+    if(!req.body.planName){
+        return res.status(200).send({
+            success:false,
+            message:"no input"
+        });
+    }
+    //check if plan exist 
+    const planResult = await PlanRepository.getPlanByPlanName(req.body.planName);
+    if(!planResult[0].Plan_MVP_name){
+        return res.status(200).send({
+            success:false,
+            message:"invalid plan"
+        })
+    }
+    return res.status(200).send({
+        success:true,
+        plan:planResult
+    })
 
 });
 
@@ -490,6 +522,36 @@ exports.getTaskByTaskName = CatchAsyncError(async(req,res,next)=>{
     });
 });
 
+//POST : get task by taskId || URL : /task/task-id || Checkgroup
+//INPUT: task_id
+exports.getTaskByTaskId = catchAsyncError(async(req,res,next)=>{
+    //checkgroup
+
+    //Get & check fields
+    if(!req.body.taskId){
+        return res.status(500).send({
+            success:false,
+            message:"task id invalid"
+        })
+    }
+
+    //Query task by task id
+    const taskResult = await TaskRepository.getTaskByTaskId(req.body.taskId);
+
+    if(!taskResult[0].Task_name){
+        return res.status(500).send({
+            success:false,
+            message:"no task found"
+        })
+    }
+    return res.status(200).send({
+        success:true,
+        task:taskResult
+    })
+
+});
+
+
 //POST : Project leader update task || URL : /pl-update/task || Checkgroup
 //INPUT: taskId, un, gn, userNotes, taskState, acronym, plan
 exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
@@ -500,20 +562,20 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
 
     //Check task state 
     if(!req.body.taskId){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"invalid task id"
         });
     }
     const taskResult = await TaskRepository.getTaskByTaskId(req.body.taskId);
     if(!taskResult[0].Task_name){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"task not found"
         })
     }
     if(taskResult[0].Task_state !== "done"){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"unable to edit task"
         })
@@ -521,16 +583,16 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
 
     //Edit state
     if(!req.body.taskState){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"invalid task state"
         });
     }
     if(req.body.taskState === "closed" || req.body.taskState === "doing" || req.body.taskState === "done"){
-        console.log(req.body.taskState)
+
     }
     else{
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"invalid task state"
         });
@@ -539,15 +601,18 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
 
     //edit plan
     if(!req.body.plan){
-        return res.status(200).send({
+        console.log("plan 1 invalid")
+        return res.status(500).send({
             success:false,
             message:"invalid plan"
         });
     }
     //Check plan if is assoisated with the application
     const checkPlan = await PlanRepository.getPlanByPlanNameNApp(req.body.plan, req.body.acronym);
+    console.log(checkPlan);
     if(!checkPlan[0].Plan_MVP_name){
-        return res.status(200).send({
+        console.log("plan 2 invalid")
+        return res.status(500).send({
             success:false,
             message:"invalid plan"
         });
@@ -558,14 +623,14 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
     taskNotes = String(taskResult[0].Task_notes);
     //System generate notes
     var today = new Date()
-    updateStateNotes = "Updated task stated:" + req.body.taskState + "|User:" + req.body.un;
-    tempSystemNotes = "system|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + updateStateNotes;
-    taskNotes = taskNotes.concat("||", tempSystemNotes);
-    console.log(taskNotes);
+    var updateStateNotes = "UPDATED TASK STATE:" + req.body.taskState + " USER:" + req.body.un;
+    var tempSystemNotes = "system|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + updateStateNotes;
+    taskNotes += "||" + tempSystemNotes;
+
     //User add notes if exist 
     if(req.body.userNotes){
-        tempUserNotes = req.body.un + "|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + req.body.userNotes;
-        taskNotes = taskNotes.concat("||", tempUserNotes);
+        var tempUserNotes = req.body.un + "|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + req.body.userNotes;
+        taskNotes += "||" + tempUserNotes;
     }
 
 
@@ -579,13 +644,13 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
                 message:"PL updated task"
             });
         }
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"error in updating task"
         });
     }
     catch(err){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"error in updating task",
             err: err
@@ -595,38 +660,42 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
 });
 
 //POST : Project manager update task || URL : /pm-update/task || Checkgroup
-//INPUT: taskId, un, gn, taskState, userNotes, acronym, devTeam(optional), devInGroupName(optional)
+//INPUT: taskId, un, gn, taskState, userNotes, acronym, taskPlan, devTeam(optional/void), devInGroupName(optional/void)
 exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
     //checkgroup
 
 
     //Fields require to be change
-    var updateTaskPlan, taskNotes, updateOwner
+    var taskNotes, updateOwner
     //check task state
     if(!req.body.taskId ,!req.body.taskPlan, !req.body.acronym){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"invalid task id"
         });
     }
     const taskResult = await TaskRepository.getTaskByTaskId(req.body.taskId);
     if(!taskResult[0].Task_name){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"invalid task id"
         });
     }
-    if(taskResult[0].Task_state != "open"){
-        return res.status(200).send({
+    if(taskResult[0].Task_state === "open" || taskResult[0].Task_state === "todo"){
+        
+    }
+    else{
+        return res.status(500).send({
             success:false,
             message:"unable to access task"
         });
     }
 
+
     //Get & check fields
     //Change state
     if(!req.body.taskState){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"invalid task state"
         });
@@ -635,7 +704,7 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
 
     }
     else{
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"invalid task state"
         });
@@ -661,33 +730,25 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
     // }
     // console.log(updateOwner)
 
-    //Change task to plan if any
-    if(req.body.taskPlan != taskResult[0].Task_plan){
+    //Check plan if exist
+    if(req.body.taskPlan){
         //check if plan exist in application
         const checkPlan = await PlanRepository.getPlanByPlanNameNApp(req.body.taskPlan, req.body.acronym);
-        console.log(checkPlan);
         if(!checkPlan[0].Plan_MVP_name){
-            return res.status(200).send({
+            return res.status(500).send({
                 success:false,
                 message:"invalid plan"
             });
         }
-        if(req.body.Task_plan == undefined){
-            updateTaskPlan = null;
-        }else{
-            updateTaskPlan = req.body.taskPlan;
-        }
-    }else{
-        updateTaskPlan = taskResult[0].Task_plan;
+
     }
-    console.log(updateTaskPlan)
 
     //Notes 
     //System generate notes
     taskNotes = taskResult[0].Task_notes;
     //System generate notes
     var today = new Date()
-    updateStateNotes = "Updated task state:" + req.body.taskState + "|User:" + req.body.un;
+    updateStateNotes = "UPDATED TASK STATE:" + req.body.taskState + " USER:" + req.body.un;
     if(req.body.taskPlan != taskResult[0].Task_plan){
         updateStateNotes.concat("|Update task plan:", req.body.taskPlan);
     }
@@ -703,21 +764,21 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
 
     //Update task
     try{
-        console.log(taskNotes, updateTaskPlan, req.body.un, req.body.taskId, req.body.taskState);
-        const result = await TaskRepository.updateTask(taskNotes, updateTaskPlan, req.body.un, req.body.taskId, req.body.taskState);
+        console.log(taskNotes, req.body.un, req.body.taskId, req.body.taskState);
+        const result = await TaskRepository.updateTask(taskNotes, req.body.taskPlan, req.body.un, req.body.taskId, req.body.taskState);
         if(result){
             return res.status(200).send({
                 success:true,
                 message:"task updated"
             });
         }
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"error in updating task"
         });
     }
     catch(err){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"error in updating task",
             err: err
@@ -736,15 +797,15 @@ exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
     var updateTaskState, taskNotes;
     //Get & check fields 
     //check if task exist 
-    if(!req.body.taskId){
-        return res.status(200).send({
+    if(!req.body.taskId, !req.body.taskState){
+        return res.status(500).send({
             success:false,
             message:"invalid task id"
         });
     }
     const taskResult = await TaskRepository.getTaskByTaskId(req.body.taskId);
     if(!taskResult[0].Task_id){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"invalid task id"
         });
@@ -752,20 +813,24 @@ exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
 
 
     //check state and set update state
-    if(taskResult[0].Task_state != "todo" || taskResult[0].Task_state != "doing"){
-        return res.status(200).send({
+    if(taskResult[0].Task_state === "todo" || taskResult[0].Task_state === "doing"){
+
+    }
+    else{
+        return res.status(500).send({
             success:false,
             message:"unable to update task"
         });
     }
+
     if(!req.body.taskState){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"invalid task state"
         });
     }
     if(taskResult[0].Task_state === "todo" && req.body.taskState === "done"){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"unable to promote todo/done"
         });
@@ -779,17 +844,20 @@ exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
     taskNotes = taskResult[0].Task_notes;
     //System generate notes
     var today = new Date()
-    updateStateNotes = "Updated task state: " + req.body.taskState + "|User: " + req.body.un;
+    var updateStateNotes = "UPDATED TASK STATE: " + req.body.taskState + " USER: " + req.body.un;
     if(req.body.taskPlan != taskResult[0].Task_plan){
         updateStateNotes.concat("|Update task plan: ", req.body.taskPlan);
     }
-    tempSystemNotes = "system|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + updateStateNotes;
-    taskNotes.concat("||", tempSystemNotes);
+    var tempSystemNotes = "system|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + updateStateNotes;
+    taskNotes += "||" + tempSystemNotes;
+
     //User add notes if exist 
     if(req.body.userNotes){
-        tempUserNotes = req.body.un + "|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + tempUserNotes;
-        taskNotes.concat("||", tempUserNotes);
+        var tempUserNotes = req.body.un + "|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + req.body.userNotes;
+        taskNotes += "||" +tempUserNotes;
+
     }
+    console.log(taskNotes);
 
     //Update task
     try{
@@ -800,13 +868,13 @@ exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
                 message:"task updated"
             })
         }
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"error in updating task"
         })
     }
     catch(err){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"error in updating task"
         })

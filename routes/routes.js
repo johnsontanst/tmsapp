@@ -35,7 +35,9 @@ const{
     pmUpdateTask,
     teamUpdateTask,
     plUpdateApp,
-    getAppByAcronym
+    getAppByAcronym,
+    getPlanByPlanName,
+    getTaskByTaskId
 
 } = require("../controller/appController")
 
@@ -102,8 +104,14 @@ router.route('/get-application').post(getAppByAcronym);
 //ROUTE: PL, PM, DT get plans based on Apps || checkgroup
 router.route('/all-plan/app').post(getPlanByApp);
 
+//ROUTE: PL, PM, DT get plans based on Apps || checkgroup
+router.route('/get-plan/planname').post(getPlanByPlanName);
+
 //ROUTE: PL, PM, DT get tasks based on Apps || checkgroup
 router.route('/all-task/app').post(getTaskByApp);
+
+//ROUTE: PL, PM, DT get tasks based on taskid || checkgroup
+router.route('/all-task/taskId').post(getTaskByTaskId);
 
 //ROUTE: PL, PM, DT get tasks based on Plan || checkgroup
 router.route('/all-task/plan').post(getTaskByPlan);
