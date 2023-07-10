@@ -3,6 +3,10 @@ const ApplicationRepository = require("../repository/applicationRepository");
 const PlanRepository = require("../repository/planRepository");
 const TaskRepository = require("../repository/taskRepository");
 const GroupRepository = require("../repository/groupRepository");
+const AccountRepository = require("../repository/accountRepository");
+
+//import nodemailer
+const {nodemail} = require("../utils/transporter");
 
 //Import JWT
 const {generateJWT} = require('../utils/jwtUtils');
@@ -159,6 +163,7 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
             message:"missing input"
         });
     }
+
     //Init planName & Colour
     planName = req.body.planName;
     colour = req.body.colour;
@@ -180,7 +185,7 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
         try{
             const appResult = await ApplicationRepository.getAppByAcronym(req.body.appAcronym);
             if(appResult.length == 0){
-                return res.status(200).send({
+                return res.status(500).send({
                     success:false,
                     message:"invalid application"
                 });
@@ -228,7 +233,7 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
         });
     }
     catch(err){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             err:err
         });
@@ -256,7 +261,7 @@ exports.createTask = CatchAsyncError(async(req,res,next)=>{
 
     //System generate task note
     const tempNow = new Date();
-    systemNotes = "system|open|" + tempNow.toISOString();
+    systemNotes = "system|open|" + tempNow.toISOString() + "|Task created";
     taskNotes = systemNotes;
     if(req.body.taskNotes){
         const notesRegex = /\|/
@@ -348,12 +353,40 @@ exports.createTask = CatchAsyncError(async(req,res,next)=>{
 
 //POST : get all application|| URL : /all-application || Checkgroup
 exports.getAllApp = CatchAsyncError(async(req,res,next)=>{
-    //Checkgroup
+    //return applications list
+    var applicationList = [];
+
+    if(!req.body.un){
+        return res.status(500).send({
+            success:false,
+            message:"username undefined"
+        })
+    }
 
     //Get all apps from the 
     const result = await ApplicationRepository.getAllApplication();
+    for(const k in result){
+        //create an array based on create, open, toDolist, doing and done
+        let tempAppArray = [];
+        if(result[k].App_permit_Create != null) tempAppArray.push(result[k].App_permit_Create);
+        if(result[k].App_permit_Open != null) tempAppArray.push(result[k].App_permit_Open);
+        if(result[k].App_permit_toDoList != null) tempAppArray.push(result[k].App_permit_toDoList);
+        if(result[k].App_permit_Doing != null) tempAppArray.push(result[k].App_permit_Doing);
+        if(result[k].App_permit_Done != null) tempAppArray.push(result[k].App_permit_Done);
+
+        //Create an array based on user groups 
+        let tempGroupResult = await GroupRepository.getAllGroupNameByUsername(req.body.un);
+        let tempUserArray = [];
+        for(const k in tempGroupResult){
+            tempUserArray.push(tempGroupResult[k].groupName)
+        }
+
+        if(tempAppArray.some(r=> tempUserArray.includes(r))){
+            applicationList.push(result[k]);
+        }
+    }
     if(!result){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"fail to get applications"
         });
@@ -857,10 +890,32 @@ exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
         taskNotes += "||" +tempUserNotes;
 
     }
-    console.log(taskNotes);
 
     //Update task
     try{
+        //send mail
+        //1.get app
+        if(updateTaskState ==="done"){
+            const appResult = await ApplicationRepository.getAppByAcronym(taskResult[0].Task_app_Acronym);
+            if(appResult[0].App_Acronym){
+                //2. Get all users email based on App permit Done
+                const allUsersEmail = GroupRepository.getAllUserEmailByGroupName(appResult[0].App_permit_Done);
+                console.log(allUsersEmail);
+            }
+
+            //send email
+            let mailDetails = {
+                from: 'noreplytmsapp@gmail.com',
+                to: 'stenggjohnson@gmail.com',
+                subject: `Task id: ${taskResult[0].Task_id} review`,
+                text: `${req.body.un} pushed task: ${taskResult[0].Task_id} to done state. Please review.`
+            };
+            console.log(mailDetails)
+            const sendMailResult = await nodemail(mailDetails);
+            console.log("test mail", sendMailResult);
+        }
+
+        console.log(taskNotes, taskResult[0].Task_plan, req.body.un, taskResult[0].Task_id, updateTaskState)
         const result = await TaskRepository.updateTask(taskNotes, taskResult[0].Task_plan, req.body.un, taskResult[0].Task_id, updateTaskState);
         if(result){
             return res.status(200).send({
@@ -876,7 +931,8 @@ exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
     catch(err){
         return res.status(500).send({
             success:false,
-            message:"error in updating task"
+            message:"error in updating task",
+            err:err
         })
     }
 
@@ -999,6 +1055,5 @@ exports.plUpdateApp = CatchAsyncError(async(req,res,next)=>{
         });
     }
 });
-
 
 

@@ -15,6 +15,10 @@ const {
     check_user_in_group_query,
     get_pivot_groupsNusers_query,
     delete_all_groups_by_username,
+    get_all_account_by_groupName_query,
+    get_all_user_email_by_groupName_query,
+    get_all_groups_by_username,
+
     } = require('./dbQueries');
 
 
@@ -56,9 +60,9 @@ class groupRepository{
         });
     }
 
-    static getAllAccountsByGroupId(accGroupId){
+    static getAllUsersByGroupName(groupName){
         return new Promise((resolve, reject)=>{
-            conn.execute(get_all_account_by_group_id_query, [accGroupId], (err, data)=>{
+            conn.execute(get_all_account_by_groupName_query, [groupName], (err, data)=>{
                 if(err) reject(err);
                 resolve(data);
             });
@@ -109,6 +113,26 @@ class groupRepository{
             })
         });
     }
+
+    static getAllUserEmailByGroupName(groupName){
+        return new Promise((resolve, reject)=>{
+            conn.execute(get_all_user_email_by_groupName_query, [groupName], (err, data)=>{
+                if(err) reject(err);
+                resolve(data);
+            })
+        });
+    }
+
+    static getAllGroupsByUsername(username){
+        return new Promise((resolve, reject)=>{
+            conn.execute(get_all_group_by_username_query, [username], (err, data)=>{
+                if(err) reject(err);
+                resolve(data);
+            })
+        });
+    }
+
+
 }
 
 module.exports = groupRepository;

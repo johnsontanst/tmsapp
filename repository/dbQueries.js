@@ -34,9 +34,13 @@ var add_user_into_group_query = "INSERT INTO accountsGroup (fk_username, fk_grou
 
 var get_all_group_by_username_query = "SELECT accGroups.groupName FROM accGroups JOIN accountsGroup ON accGroups.groupName = accountsGroup.fk_groupName WHERE accountsGroup.fk_username = ?;"
 
+var get_all_groups_by_username = "SELECT * FROM accountsgroup WHERE fk_groupName =?;"
+
 var get_all_groups_query = "SELECT * FROM accgroups;"
 
 var get_all_account_by_groupName_query = "SELECT accounts.username FROM accounts JOIN accountsGroup ON accounts.username = accountsGroup.fk_username WHERE accountsGroup.fk_groupName = ?;"
+
+var get_all_user_email_by_groupName_query = "SELECT accounts.email FROM accounts JOIN accountsGroup ON accounts.username = accountsGroup.fk_username WHERE accountsGroup.fk_groupName = ?;"
 
 var get_all_username_by_application_open_query = "SELECT accountsGroup.fk_username from accountsGroup JOIN application ON accountsGroup.fk_groupName = application.App_permit_Open WHERE application.App_Acronym = ?"
 
@@ -62,6 +66,15 @@ var update_app_Rnumber_query = "UPDATE application SET App_Rnumber = ? WHERE App
 
 var update_app_query = "UPDATE application SET App_endDate = ?, App_permit_Open=?, App_permit_toDoList=?,App_permit_Doing=?, App_permit_Done=?, App_Description=? WHERE App_Acronym = ?;"
 
+var check_create_group_query = "SELECT * FROM application WHERE App_permit_Create = ?;"
+
+var check_open_group_query = "SELECT * FROM application WHERE App_permit_Open = ?;"
+
+var check_todo_group_query = "SELECT * FROM application WHERE App_permit_toDoList = ?;"
+
+var check_doing_group_query = "SELECT * FROM application WHERE App_permit_Doing = ?;"
+
+var check_done_group_query = "SELECT * FROM application WHERE App_permit_Done = ?;"
 
 //END Apllication QUERY
 //Plan
@@ -135,4 +148,11 @@ module.exports = {
     "get_plan_by_planName_app_query" : get_plan_by_planName_app_query,
     "get_task_by_task_id_query" : get_task_by_task_id_query,
     "update_app_query" : update_app_query,
+    "get_all_user_email_by_groupName_query" : get_all_user_email_by_groupName_query,
+    "get_all_groups_by_username" : get_all_groups_by_username,
+    "check_create_group_query":check_create_group_query,
+    "check_open_group_query": check_open_group_query,
+    "check_todo_group_query":check_todo_group_query ,
+    "check_doing_group_query": check_doing_group_query,
+    "check_done_group_query":check_done_group_query ,
 }

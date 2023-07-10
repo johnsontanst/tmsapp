@@ -1,6 +1,7 @@
 //Import Repository 
 const AccountRepository = require('../repository/accountRepository');
 const GroupRepository = require('../repository/groupRepository');
+const ApplicationRepository = require('../repository/applicationRepository');
 
 //Import JWT
 const {generateJWT} = require('../utils/jwtUtils');
@@ -144,6 +145,11 @@ exports.newAccountC = CatchAsyncError( async (req, res, next)=>{
 //POST : login by username || URL : /login 
 exports.loginC = CatchAsyncError( async(req,res,next)=>{
     try{
+        //variables to return
+        let isPL = false
+        let isPM = false
+        let isDev = false
+
          //get account by username and return http error 403 if username is not found
         const returnUser = await AccountRepository.getAccountByUsername(req.body.username);
         if(returnUser[0] === undefined){
@@ -177,6 +183,29 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
                 for (const k in groups){
                     groupArray.push(groups[k].groupName);
                 }
+                //Check if user belongs to any PL, PM or DEV team
+                for(const j in groupArray){
+                    let openResult = await ApplicationRepository.checkGroupInPermitOpen(groupArray[j]);
+                    if(openResult.length > 0){
+                        isPM = true;
+                    } 
+                    let createResult = await ApplicationRepository.checkGroupInPermitCreate(groupArray[j]);
+                    if(createResult.length > 0){
+                        isPL = true;
+                    }
+                    let toDoResult = await ApplicationRepository.checkGroupInPermitTodo(groupArray[j]);
+                    if(toDoResult.length > 0){
+                        isDev = true;
+                    }
+                    let doingResult = await ApplicationRepository.checkGroupInPermitDoing(groupArray[j]);
+                    if(doingResult.length > 0){
+                        isDev = true;
+                    }
+                    let doneResult = await ApplicationRepository.checkGroupInPermitDone(groupArray[j]);
+                    if(doneResult.length > 0){
+                        isPL = true;
+                    }
+                }
             }
 
             //Set token in session
@@ -184,12 +213,14 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
             res.cookie('authToken',token, { maxAge: parseInt(process.env.COOKIE_EXPIRES_IN) * 60 * 1000, httpOnly: true, origin:"localhost:3030" });
 
 
-
             return res.status(200).send({
                 success:true,
                 username: returnUser[0].username,
                 groups: groupArray,
-                status: returnUser[0].status
+                status: returnUser[0].status,
+                isPL:isPL,
+                isPM:isPM,
+                isDev:isDev
                 
             });
         }
@@ -300,15 +331,17 @@ exports.logoutC = async(req, res,next)=>{
 
 //POST : auth token return user info || URL : /authtoken/return/userinfo
 exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
-
+    console.log("enter auth token");
+    console.log(req.cookies.authToken)
+    console.log("SESSION: ",req.session.authToken)
     if(!req.cookies.authToken || !req.session.authToken){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"invalid token"
         });
     }
     if(req.cookies.authToken != req.session.authToken){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"invalid token"
         });
@@ -320,7 +353,7 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
     //Check for user string and user ip address
     const currentUserIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
         if(u.userip != currentUserIp || !currentUserIp){
-            return res.status(200).send({
+            return res.status(500).send({
                 success:false,
                 message:"invalid session"
             });
@@ -329,7 +362,7 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
     //check user agent
     const currentUserAgent = req.headers['user-agent'];
     if(u.useragent != currentUserAgent){
-        return res.status(200).send({
+        return res.status(500).send({
             success:false,
             message:"invalid session"
         });
@@ -341,26 +374,61 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
 
     if(returnUser.length >=1 && returnGroups){
         const groupArray = []
+        let isPL = false
+        let isPM = false
+        let isDev = false
         //Modify group array
         for (const k in returnGroups){
             groupArray.push(returnGroups[k].groupName);
         }
+        //Check if user belongs to any PL, PM or DEV team
+        for(const j in groupArray){
+            let openResult = await ApplicationRepository.checkGroupInPermitOpen(groupArray[j]);
+            if(openResult.length > 0){
+                console.log("pm is true")
+                isPM = true;
+            } 
+            let createResult = await ApplicationRepository.checkGroupInPermitCreate(groupArray[j]);
+            if(createResult.length > 0){
+                isPL = true;
+            }
+            let toDoResult = await ApplicationRepository.checkGroupInPermitTodo(groupArray[j]);
+            if(toDoResult.length > 0){
+                isDev = true;
+            }
+            let doingResult = await ApplicationRepository.checkGroupInPermitDoing(groupArray[j]);
+            if(doingResult.length > 0){
+                isDev = true;
+            }
+            let doneResult = await ApplicationRepository.checkGroupInPermitDone(groupArray[j]);
+            if(doneResult.length > 0){
+                isPL = true;
+            }
+        }
+
         return res.status(200).send({
             success:true,
             username:returnUser[0].username,
             groups:groupArray,
-            status: returnUser[0].status
+            status: returnUser[0].status,
+            isPL:isPL,
+            isPM:isPM,
+            isDev:isDev
         })
     }
     else if(returnUser.length >= 1){
+        var isPM, isPL, isDev = false
         return res.status(200).send({
             success:true,
             username:returnUser[0].username,
-            groups:[]
+            groups:[],
+            isPL:isPL,
+            isPM:isPM,
+            isDev:isDev
         })
     }
 
-    return res.status(403).send({
+    return res.status(500).send({
         success:false,
         message:"invalid token"
     });
@@ -742,7 +810,6 @@ exports.adminGetAllGroups = CatchAsyncError(async(req, res,next)=>{
     });
 
 });
-
 
 exports.temprotected = async (req,res,next)=>{
     return res.status(200).send({
