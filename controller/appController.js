@@ -24,12 +24,25 @@ const catchAsyncError = require("../middleware/catchAsyncError");
 
 
 //POST : create application || URL : /create-application || Checkgroup
-//INPUT: acronym, description, rnumber, startDate, endDate, open(optional), toDo(optional), doing(optional), done(optional)
+//INPUT: acronym, description, rnumber, startDate, endDate, open(optional), toDo(optional), doing(optional), done(optional), un, gn
 exports.createApplication = CatchAsyncError(async(req, res, next)=>{
     //checkgroup
+    if(!req.body.un || !req.body.gn){
+        return res.status(500).send({
+            success:false,
+            message:"not authorized"
+        })
+    }
+
+    if(!checkGroup(req.body.un, req.body.gn)){
+        return res.status(500).send({
+            success:false,
+            message:"not authorized"
+        })
+    }
 
     //Get & Check for all fields 
-    var acronym, description, rnumber, startDate, endDate, open, toDo, doing, done;
+    var acronym, description, rnumber, startDate, endDate, create, open, toDo, doing, done;
 
     //Check for mandatory fields 
     if(!req.body.acronym, !req.body.description, !req.body.rnumber, !req.body.startDate, !req.body.endDate){
@@ -64,6 +77,19 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
             });
         }
         endDate = req.body.endDate;
+    }
+    if(req.body.create){
+        //Check if group exisit 
+        const checkCreate = await GroupRepository.getGroupByGroupName(req.body.create);
+        if(checkCreate.length == 0){
+            return res.status(500).send({
+                success:false,
+                message:"invalid group open"
+            });
+        }
+        create = req.body.create;
+    }else{
+        open = null;
     }
     if(req.body.open){
         //Check if group exisit 
@@ -124,7 +150,8 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
     //create app
     try{
         //call the create app query
-        const result = await ApplicationRepository.createApplication(acronym,description,rnumber,startDate,endDate,open,toDo,doing,done);
+        const result = await ApplicationRepository.createApplication(acronym,description,rnumber,startDate,endDate,create,open,toDo,doing,done);
+        console.log(result);
         if(result){
             return res.status(200).send({
                 success:true,
@@ -140,6 +167,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
 
     }
     catch(err){
+        console.log(err);
         res.status(500).send({
             success:false,
             message:err
@@ -939,13 +967,13 @@ exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
 });
 
 //POST : PL update application || URL : /update/application || Checkgroup
-//INPUT: acronym, description, endDate, permitOpen(optional), permitTodo(optional), permitDoing(optional), permitDone(optional)
+//INPUT: acronym, description, endDate, permitCreate(optional), permitOpen(optional), permitTodo(optional), permitDoing(optional), permitDone(optional)
 exports.plUpdateApp = CatchAsyncError(async(req,res,next)=>{
     //checkgroup
 
 
     //fields require to be change
-    var newOpen, newTodo, newDoing, newDone
+    var newCreate, newOpen, newTodo, newDoing, newDone
     //Check if fields exist
     if(!req.body.acronym, !req.body.endDate){
         return res.status(500).send({
@@ -969,6 +997,21 @@ exports.plUpdateApp = CatchAsyncError(async(req,res,next)=>{
             success:false,
             message:"End date invalid"
         });
+    }
+
+    //update app Permit Create
+    if(req.body.permitCreate){
+        //check if the group exist 
+        const checkCreate = await GroupRepository.getGroupByGroupName(req.body.permitCreate);
+        if(!checkCreate[0].groupName){
+            return res.status(200).send({
+                success:false,
+                message:"invalid open group"
+            });
+        }
+        newCreate = req.body.permitCreate;
+    }else{
+        newCreate = null;
     }
 
     //update app Permit open
@@ -1034,7 +1077,7 @@ exports.plUpdateApp = CatchAsyncError(async(req,res,next)=>{
 
     //update application
     try{
-        const result = await ApplicationRepository.updateApp(newEndDate, newOpen, newTodo, newDoing, newDone, appResult[0].App_Acronym, req.body.description);
+        const result = await ApplicationRepository.updateApp(newEndDate, newCreate, newOpen, newTodo, newDoing, newDone, appResult[0].App_Acronym, req.body.description);
         if(result){
             return res.status(200).send({
                 success:true,
@@ -1048,6 +1091,7 @@ exports.plUpdateApp = CatchAsyncError(async(req,res,next)=>{
         });
 
     }catch(err){
+        console.log(err);
         return res.status(200).send({
             success:false,
             message:"error in updating application",

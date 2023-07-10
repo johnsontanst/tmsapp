@@ -149,6 +149,7 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
         let isPL = false
         let isPM = false
         let isDev = false
+        let assoisated = false
 
          //get account by username and return http error 403 if username is not found
         const returnUser = await AccountRepository.getAccountByUsername(req.body.username);
@@ -207,6 +208,7 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
                     }
                 }
             }
+            if(isPL || isPM || isDev) assoisated = true;
 
             //Set token in session
             req.session.authToken = token
@@ -218,9 +220,7 @@ exports.loginC = CatchAsyncError( async(req,res,next)=>{
                 username: returnUser[0].username,
                 groups: groupArray,
                 status: returnUser[0].status,
-                isPL:isPL,
-                isPM:isPM,
-                isDev:isDev
+                planAssoisated: assoisated
                 
             });
         }
@@ -335,13 +335,13 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
     console.log(req.cookies.authToken)
     console.log("SESSION: ",req.session.authToken)
     if(!req.cookies.authToken || !req.session.authToken){
-        return res.status(500).send({
+        return res.status(200).send({
             success:false,
             message:"invalid token"
         });
     }
     if(req.cookies.authToken != req.session.authToken){
-        return res.status(500).send({
+        return res.status(200).send({
             success:false,
             message:"invalid token"
         });
@@ -353,7 +353,7 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
     //Check for user string and user ip address
     const currentUserIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
         if(u.userip != currentUserIp || !currentUserIp){
-            return res.status(500).send({
+            return res.status(200).send({
                 success:false,
                 message:"invalid session"
             });
@@ -362,7 +362,7 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
     //check user agent
     const currentUserAgent = req.headers['user-agent'];
     if(u.useragent != currentUserAgent){
-        return res.status(500).send({
+        return res.status(200).send({
             success:false,
             message:"invalid session"
         });
@@ -377,6 +377,7 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
         let isPL = false
         let isPM = false
         let isDev = false
+        let assoisated = false
         //Modify group array
         for (const k in returnGroups){
             groupArray.push(returnGroups[k].groupName);
@@ -405,6 +406,7 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
                 isPL = true;
             }
         }
+        if(isPL || isPM || isDev) assoisated = true;
 
         return res.status(200).send({
             success:true,
@@ -413,7 +415,8 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
             status: returnUser[0].status,
             isPL:isPL,
             isPM:isPM,
-            isDev:isDev
+            isDev:isDev,
+            planAssoisated:assoisated
         })
     }
     else if(returnUser.length >= 1){
@@ -428,7 +431,7 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
         })
     }
 
-    return res.status(500).send({
+    return res.status(200).send({
         success:false,
         message:"invalid token"
     });
@@ -809,6 +812,22 @@ exports.adminGetAllGroups = CatchAsyncError(async(req, res,next)=>{
         success:false
     });
 
+});
+
+//POST: Checkgroup used for application || URL : /cg
+exports.cg = CatchAsyncError(async(req,res,next)=>{
+    //checkgroup
+    if(!req.body.un || !req.body.gn){
+        return res.status(200).send({
+            success:false,
+            message:"un gn no input"
+        })
+    }
+    const cgResult = await checkGroup(req.body.un, req.body.gn)
+    return res.status(200).send({
+        success:true,
+        cgResult:cgResult
+    })
 });
 
 exports.temprotected = async (req,res,next)=>{

@@ -56,7 +56,7 @@ var get_pivot_groupsNusers_query = "SELECT * FROM accountsgroup;"
 
 //END Group QUERY
 //Application
-var create_application_query = "INSERT INTO application (App_Acronym, App_Description, App_Rnumber, App_startDate, App_endDate, App_permit_Open, App_permit_toDoList, App_permit_Doing, App_permit_Done) VALUES(?,?,?,?,?,?,?,?,?);"
+var create_application_query = "INSERT INTO application (App_Acronym, App_Description, App_Rnumber, App_startDate, App_endDate, App_permit_Create, App_permit_Open, App_permit_toDoList, App_permit_Doing, App_permit_Done) VALUES(?,?,?,?,?,?,?,?,?,?);"
 
 var get_all_application_query = "SELECT * FROM application;"
 
@@ -64,7 +64,7 @@ var get_app_by_app_acronym_query = "SELECT * FROM application WHERE App_Acronym=
 
 var update_app_Rnumber_query = "UPDATE application SET App_Rnumber = ? WHERE App_Acronym = ?;"
 
-var update_app_query = "UPDATE application SET App_endDate = ?, App_permit_Open=?, App_permit_toDoList=?,App_permit_Doing=?, App_permit_Done=?, App_Description=? WHERE App_Acronym = ?;"
+var update_app_query = "UPDATE application SET App_endDate = ?, App_permit_Create=?, App_permit_Open=?, App_permit_toDoList=?,App_permit_Doing=?, App_permit_Done=?, App_Description=? WHERE App_Acronym = ?;"
 
 var check_create_group_query = "SELECT * FROM application WHERE App_permit_Create = ?;"
 

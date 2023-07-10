@@ -19,6 +19,7 @@ const {
     getUserProfile,
     adminGetUserProfile,
     adminGetAllGroups,
+    cg
 
     } = require('../controller/accountController');
 
@@ -58,6 +59,9 @@ router.route('/login').post(loginC);
 
 //ROUTE: Logout user
 router.route('/logout').post(logoutC);
+
+//ROUTE: checkgroup 
+router.route('/cg').post(cg);
 
 //ROUTE: Add user into group || NOT IN USED
 //router.route('/add/usertogroup').post(addUserToGroupC);

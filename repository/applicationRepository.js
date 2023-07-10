@@ -18,9 +18,9 @@ const {
 
 class applicationRepository{
 
-    static createApplication(acronym, description, rnumber, startDate, endDate, open, toDoList, doing, done){
+    static createApplication(acronym, description, rnumber, startDate, endDate, create, open, toDoList, doing, done){
         return new Promise((resolve, reject)=>{
-            conn.execute(create_application_query, [acronym, description, rnumber,startDate,endDate,open,toDoList,doing,done], (err)=>{
+            conn.execute(create_application_query, [acronym, description, rnumber,startDate,endDate,create,open,toDoList,doing,done], (err)=>{
                 if(err) reject(err);
                 resolve(true);
             });
@@ -54,9 +54,9 @@ class applicationRepository{
         })
     }
 
-    static updateApp(endDate, permitOpen, permitTodo, permitDoing, permitDone, acronym, desc){
+    static updateApp(endDate, permitCreate, permitOpen, permitTodo, permitDoing, permitDone, acronym, desc){
         return new Promise((resolve, reject)=>{
-            conn.execute(update_app_query, [endDate, permitOpen, permitTodo, permitDoing, permitDone, desc, acronym], (err)=>{
+            conn.execute(update_app_query, [endDate, permitCreate, permitOpen, permitTodo, permitDoing, permitDone, desc, acronym], (err)=>{
                 if(err) reject(err);
                 resolve(true);
             });
