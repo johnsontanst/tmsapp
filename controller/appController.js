@@ -53,6 +53,12 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
     }else{
         acronym = req.body.acronym;
         description = req.body.description;
+        if(parseInt(req.body.rnumber) < 0){
+            return res.status(500).send({
+                success:false,
+                message:"rnumber cannot be less than zero"
+            })
+        }
         rnumber = req.body.rnumber;
         //Check startDate < current date then return error
         const today = new Date();
@@ -89,7 +95,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
         }
         create = req.body.create;
     }else{
-        open = null;
+        create = null;
     }
     if(req.body.open){
         //Check if group exisit 
@@ -181,6 +187,18 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
 //INPUT: planName, startDate, endDate, appAcronym, colour
 exports.createPlan = CatchAsyncError(async(req,res,next)=>{
     //Check group
+    if(!req.body.un || !req.body.gn){
+        return res.status(500).send({
+            success:false,
+            message:"not authorized"
+        })
+    }
+    if(!await checkGroup(req.body.un, req.body.gn)){
+        return res.status(500).send({
+            success:false,
+            message:"not authorized"
+        }) 
+    }
 
 
     //Get & Check all fields
@@ -272,6 +290,18 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
 //INPUT: taskName, taskDescription(optional), taskNotes(optional), taskId(system), taskPlan, taskApp, taskState(system), taskCreator, taskOwner, createDate(system), un, gn
 exports.createTask = CatchAsyncError(async(req,res,next)=>{
     //Check group
+    if(!req.body.un || !req.body.gn){
+        return res.status(500).send({
+            success:false,
+            message:"not authorized"
+        })
+    }
+    if(!await checkGroup(req.body.un, req.body.gn)){
+        return res.status(500).send({
+            success:false,
+            message:"not authorized"
+        }) 
+    }
 
     //Get & check fields 
     var taskName, taskDescription, taskNotes, taskId, taskPlan, taskApp, taskState, taskCreator, taskOwner, createDate;
@@ -289,7 +319,7 @@ exports.createTask = CatchAsyncError(async(req,res,next)=>{
 
     //System generate task note
     const tempNow = new Date();
-    systemNotes = "system|open|" + tempNow.toISOString() + "|Task created";
+    let systemNotes = "system|open|" + tempNow.toISOString() + "|Task created";
     taskNotes = systemNotes;
     if(req.body.taskNotes){
         const notesRegex = /\|/
@@ -617,9 +647,22 @@ exports.getTaskByTaskId = catchAsyncError(async(req,res,next)=>{
 //INPUT: taskId, un, gn, userNotes, taskState, acronym, plan
 exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
     //Checkgroup
+    if(!req.body.un || !req.body.gn){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
+    const checkGroupR = await checkGroup(req.body.un, req.body.gn);
+    if(!checkGroupR){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
 
     //Create all required variables to edit
-    var taskNotes;
+    var taskNotes , newPlan
 
     //Check task state 
     if(!req.body.taskId){
@@ -661,22 +704,14 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
 
 
     //edit plan
-    if(!req.body.plan){
-        console.log("plan 1 invalid")
-        return res.status(500).send({
-            success:false,
-            message:"invalid plan"
-        });
-    }
     //Check plan if is assoisated with the application
-    const checkPlan = await PlanRepository.getPlanByPlanNameNApp(req.body.plan, req.body.acronym);
-    console.log(checkPlan);
-    if(!checkPlan[0].Plan_MVP_name){
-        console.log("plan 2 invalid")
-        return res.status(500).send({
-            success:false,
-            message:"invalid plan"
-        });
+    if(!req.body.plan){
+        newPlan = null;
+    }else{
+        const checkPlan = await PlanRepository.getPlanByPlanNameNApp(req.body.plan, req.body.acronym);
+        if(checkPlan[0].Plan_MVP_name){
+            newPlan = checkPlan[0].Plan_MVP_name;
+        }
     }
 
     //Get & check valid fields 
@@ -697,8 +732,8 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
 
     //Update task 
     try{
-        console.log(taskNotes, checkPlan[0].Plan_MVP_name, req.body.un,taskResult[0].Task_id, req.body.taskState)
-        const updateResult = await TaskRepository.updateTask(taskNotes, checkPlan[0].Plan_MVP_name, req.body.un,taskResult[0].Task_id, req.body.taskState);
+        //console.log(taskNotes, checkPlan[0].Plan_MVP_name, req.body.un,taskResult[0].Task_id, req.body.taskState)
+        const updateResult = await TaskRepository.updateTask(taskNotes, newPlan, req.body.un,taskResult[0].Task_id, req.body.taskState);
         if(updateResult){
             return res.status(200).send({
                 success:true,
@@ -711,6 +746,7 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
         });
     }
     catch(err){
+        console.log(err);
         return res.status(500).send({
             success:false,
             message:"error in updating task",
@@ -724,7 +760,19 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
 //INPUT: taskId, un, gn, taskState, userNotes, acronym, taskPlan, devTeam(optional/void), devInGroupName(optional/void)
 exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
     //checkgroup
-
+    if(!req.body.un || !req.body.gn){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
+    const checkGroupR = await checkGroup(req.body.un, req.body.gn);
+    if(!checkGroupR){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
 
     //Fields require to be change
     var taskNotes, updateOwner
@@ -852,7 +900,20 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
 //INPUT: taskId, un, gn, taskState, userNotes
 exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
     //checkgroup
-
+    console.log(req.body.un, req.body.gn)
+    if(!req.body.un || !req.body.gn){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
+    const checkGroupR = await checkGroup(req.body.un, req.body.gn);
+    if(!checkGroupR){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
 
     //Fields require to be change
     var updateTaskState, taskNotes;
@@ -927,23 +988,33 @@ exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
             const appResult = await ApplicationRepository.getAppByAcronym(taskResult[0].Task_app_Acronym);
             if(appResult[0].App_Acronym){
                 //2. Get all users email based on App permit Done
-                const allUsersEmail = GroupRepository.getAllUserEmailByGroupName(appResult[0].App_permit_Done);
+                const allUsersEmail = await GroupRepository.getAllUserEmailByGroupName(appResult[0].App_permit_Done);
                 console.log(allUsersEmail);
+                //send email if not null
+                for(const k in allUsersEmail){
+                    if(allUsersEmail[k] !== null){
+                        //Construct email subjct and body
+                        //send email
+                        let mailDetails = {
+                            from: 'noreplytmsapp@gmail.com',
+                            to: `${allUsersEmail[k].email}`,
+                            subject: `Task name: ${taskResult[0].Task_name} review`,
+                            text: `${req.body.un} pushed task id: ${taskResult[0].Task_id} to done state. Please review.`
+                        };
+                        try{
+                            const sendMailResult = await nodemail(mailDetails);
+                        }
+                        catch(err){
+                            console.log(err)
+                        }
+                        //clear mailDetails
+                        mailDetails = null;
+                    }
+                }
             }
-
-            //send email
-            let mailDetails = {
-                from: 'noreplytmsapp@gmail.com',
-                to: 'stenggjohnson@gmail.com',
-                subject: `Task id: ${taskResult[0].Task_id} review`,
-                text: `${req.body.un} pushed task: ${taskResult[0].Task_id} to done state. Please review.`
-            };
-            console.log(mailDetails)
-            const sendMailResult = await nodemail(mailDetails);
-            console.log("test mail", sendMailResult);
         }
 
-        console.log(taskNotes, taskResult[0].Task_plan, req.body.un, taskResult[0].Task_id, updateTaskState)
+        //console.log(taskNotes, taskResult[0].Task_plan, req.body.un, taskResult[0].Task_id, updateTaskState)
         const result = await TaskRepository.updateTask(taskNotes, taskResult[0].Task_plan, req.body.un, taskResult[0].Task_id, updateTaskState);
         if(result){
             return res.status(200).send({
@@ -957,6 +1028,7 @@ exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
         })
     }
     catch(err){
+        console.log(err);
         return res.status(500).send({
             success:false,
             message:"error in updating task",
