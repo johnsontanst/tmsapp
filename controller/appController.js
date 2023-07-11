@@ -70,7 +70,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
                 message:"invalid start date"
             });
         } 
-        startDate = req.body.startDate;
+        startDate = checkDate;
         //Check endDate < startDate then return an error
         var tempStartDateArray = String(req.body.startDate).split("-");
         var tempStartDate = new Date(tempStartDateArray[0], parseInt(tempStartDateArray[1])-1, parseInt(tempStartDateArray[2])+1);
@@ -82,7 +82,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
                 message:"invalid end date"
             });
         }
-        endDate = req.body.endDate;
+        endDate = tempEndDate;
     }
     if(req.body.create){
         //Check if group exisit 
@@ -238,7 +238,7 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
             }
             //Check date 
             var tempAppStartDate = appResult[0].App_startDate;
-            tempAppStartDate.setDate(tempAppStartDate.getDate() + 1);
+            tempAppStartDate.setDate(tempAppStartDate.getDate());
 
             var tempAppEndDate = appResult[0].App_endDate;
             tempAppEndDate.setDate(tempAppEndDate.getDate() + 1);
@@ -250,8 +250,8 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
                 });
             }
             appAcronym = req.body.appAcronym;
-            startDate = req.body.startDate;
-            endDate = req.body.endDate;
+            startDate = tempAppStartDate;
+            endDate = tempAppEndDate;
         }
         catch(err){
             return res.status(500).send({
@@ -874,7 +874,15 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
     //Update task
     try{
         console.log(taskNotes, req.body.un, req.body.taskId, req.body.taskState);
-        const result = await TaskRepository.updateTask(taskNotes, req.body.taskPlan, req.body.un, req.body.taskId, req.body.taskState);
+        //Set task plan
+        let taskPlan
+        if(!req.body.taskPlan){
+            taskPlan = null;
+        }
+        else{
+            taskPlan = req.body.taskPlan;
+        }
+        const result = await TaskRepository.updateTask(taskNotes, taskPlan, req.body.un, req.body.taskId, req.body.taskState);
         if(result){
             return res.status(200).send({
                 success:true,
