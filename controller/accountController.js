@@ -331,9 +331,9 @@ exports.logoutC = async(req, res,next)=>{
 
 //POST : auth token return user info || URL : /authtoken/return/userinfo
 exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
-    console.log("enter auth token");
-    console.log(req.cookies.authToken)
-    console.log("SESSION: ",req.session.authToken)
+    // console.log("enter auth token");
+    // console.log(req.cookies.authToken)
+    // console.log("SESSION: ",req.session.authToken)
     if(!req.cookies.authToken || !req.session.authToken){
         return res.status(200).send({
             success:false,
@@ -386,7 +386,7 @@ exports.authTokenCheckRole = CatchAsyncError(async (req,res,next)=>{
         for(const j in groupArray){
             let openResult = await ApplicationRepository.checkGroupInPermitOpen(groupArray[j]);
             if(openResult.length > 0){
-                console.log("pm is true")
+                //console.log("pm is true")
                 isPM = true;
             } 
             let createResult = await ApplicationRepository.checkGroupInPermitCreate(groupArray[j]);
@@ -784,20 +784,20 @@ exports.getUserProfile = CatchAsyncError(async(req,res,next)=>{
 //POST : admin get all groups || URL : /allgroups
 exports.adminGetAllGroups = CatchAsyncError(async(req, res,next)=>{
      //CheckGroup
-     if(!req.body.un || !req.body.gn){
-        return res.status(500).send({
-            success:false,
-            message:"unauthrorized"
-        });
-    }
-    const checkGroupR = await checkGroup(req.body.un, req.body.gn);
-    console.log(checkGroupR);
-    if(!checkGroupR){
-        return res.status(500).send({
-            success:false,
-            message:"unauthrorized"
-        });
-    }
+    //  if(!req.body.un || !req.body.gn){
+    //     return res.status(500).send({
+    //         success:false,
+    //         message:"unauthrorized"
+    //     });
+    // }
+    // const checkGroupR = await checkGroup(req.body.un, req.body.gn);
+    // console.log(checkGroupR);
+    // if(!checkGroupR){
+    //     return res.status(500).send({
+    //         success:false,
+    //         message:"unauthrorized"
+    //     });
+    // }
 
     //Get all groups and return 
     const allGroups = await GroupRepository.getAllGroups();

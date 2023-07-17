@@ -34,7 +34,25 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
         })
     }
 
-    if(!checkGroup(req.body.un, req.body.gn)){
+    //check user status
+    const checkUserResult = await AccountRepository.getAccountByUsername(req.body.un);
+    if(!checkUserResult){
+        return res.status(500).send({
+            success:false,
+            message:"not authorized"
+        })
+    }
+    else{
+        if(checkUserResult[0].status == 0){
+            return res.status(500).send({
+                success:false,
+                message:"not authorized"
+            })
+        }
+    }
+
+    //checkgroup part 2
+    if(!await checkGroup(req.body.un, req.body.gn)){
         return res.status(500).send({
             success:false,
             message:"not authorized"
@@ -157,7 +175,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
     try{
         //call the create app query
         const result = await ApplicationRepository.createApplication(acronym,description,rnumber,startDate,endDate,create,open,toDo,doing,done);
-        console.log(result);
+        //console.log(result);
         if(result){
             return res.status(200).send({
                 success:true,
@@ -173,7 +191,7 @@ exports.createApplication = CatchAsyncError(async(req, res, next)=>{
 
     }
     catch(err){
-        console.log(err);
+        //console.log(err);
         res.status(500).send({
             success:false,
             message:err
@@ -193,6 +211,24 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
             message:"not authorized"
         })
     }
+
+    //check user status
+    const checkUserResult = await AccountRepository.getAccountByUsername(req.body.un);
+    if(!checkUserResult){
+        return res.status(500).send({
+            success:false,
+            message:"not authorized"
+        })
+    }
+    else{
+        if(checkUserResult[0].status == 0){
+            return res.status(500).send({
+                success:false,
+                message:"not authorized"
+            })
+        }
+    }
+
     if(!await checkGroup(req.body.un, req.body.gn)){
         return res.status(500).send({
             success:false,
@@ -241,7 +277,8 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
             tempAppStartDate.setDate(tempAppStartDate.getDate());
 
             var tempAppEndDate = appResult[0].App_endDate;
-            tempAppEndDate.setDate(tempAppEndDate.getDate() + 1);
+            tempAppEndDate.setDate(tempAppEndDate.getDate());
+            //console.log(tempAppEndDate);
 
             if(tempAppStartDate > tempStartDate || tempAppEndDate < tempEndDate){
                 return res.status(500).send({
@@ -265,7 +302,7 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
 
     //Create plan
     try{
-        console.log(planName,startDate,endDate,appAcronym,colour);
+        //console.log(planName,startDate,endDate,appAcronym,colour);
         const result = await PlanRepository.createPlan(planName,startDate,endDate,appAcronym,colour);
         if(result){
             return res.status(200).send({
@@ -296,6 +333,24 @@ exports.createTask = CatchAsyncError(async(req,res,next)=>{
             message:"not authorized"
         })
     }
+
+    //check user status
+    const checkUserResult = await AccountRepository.getAccountByUsername(req.body.un);
+    if(!checkUserResult){
+        return res.status(500).send({
+            success:false,
+            message:"not authorized"
+        })
+    }
+    else{
+        if(checkUserResult[0].status == 0){
+            return res.status(500).send({
+                success:false,
+                message:"not authorized"
+            })
+        }
+    }
+
     if(!await checkGroup(req.body.un, req.body.gn)){
         return res.status(500).send({
             success:false,
@@ -325,9 +380,9 @@ exports.createTask = CatchAsyncError(async(req,res,next)=>{
         const notesRegex = /\|/
         if(!notesRegex.test(req.body.taskNotes)){
             var userNotes = req.body.un + "|open|" + tempNow.toISOString() + "|" + req.body.taskNotes;
-            console.log(userNotes);
+            //console.log(userNotes);
             taskNotes += "||" + userNotes;
-            console.log(taskNotes);
+            //console.log(taskNotes);
         }
     }
 
@@ -344,18 +399,30 @@ exports.createTask = CatchAsyncError(async(req,res,next)=>{
         //concat task id
         tempAppName = appResult[0].App_Acronym;
         tempAppRnumber = appResult[0].App_Rnumber;
-        tempAppRnumber += 1;
         taskId = tempAppName + "_" + tempAppRnumber;
-        console.log(appResult[0].App_Acronym);
 
-        //Update Rnumber
-        const updateRNumberResult = await ApplicationRepository.updateRnumber(appResult[0].App_Acronym, tempAppRnumber);
-        if(!updateRNumberResult){
-            return res.status(200).send({
-                success:false,
-                message:"unable to update app rnumber"
-            });
+        const taskResult = await TaskRepository.getTaskByTaskId(taskId);
+
+        if(taskResult.length <= 0 ){
+            const updateRNumberResult = await ApplicationRepository.updateRnumber(appResult[0].App_Acronym, tempAppRnumber);
+            if(!updateRNumberResult){
+                return res.status(200).send({
+                    success:false,
+                    message:"unable to update app rnumber"
+                });
+            }
+        }else{
+            tempAppRnumber += 1;
+            taskId = tempAppName + "_" + tempAppRnumber;
+            const updateRNumberResultE = await ApplicationRepository.updateRnumber(appResult[0].App_Acronym, tempAppRnumber);
+            if(!updateRNumberResultE){
+                return res.status(200).send({
+                    success:false,
+                    message:"unable to update app rnumber"
+                });
+            }
         }
+
     }
 
     //System insert creator & taskOwner & createDate
@@ -387,7 +454,7 @@ exports.createTask = CatchAsyncError(async(req,res,next)=>{
     try{
         //Check if desc is undefined
         if(!req.body.taskDescription) taskDescription = null;
-        console.log(taskName, taskDescription, taskNotes, taskId, taskPlan, taskApp, taskState, taskCreator, taskOwner, createDate)
+        // console.log(taskName, taskDescription, taskNotes, taskId, taskPlan, taskApp, taskState, taskCreator, taskOwner, createDate)
         const resultTask = await TaskRepository.createTask(taskName, taskDescription, taskNotes, taskId, taskPlan, taskApp, taskState, taskCreator, taskOwner, createDate);
         if(resultTask){
             return res.status(200).send({
@@ -494,7 +561,7 @@ exports.getPlanByApp = CatchAsyncError(async(req,res,next)=>{
         });
     }
     const result = await PlanRepository.getAllPlanByApp(req.body.app_Acronym);
-    console.log(result)
+    // console.log(result)
     if(result.length == 0){
         return res.status(200).send({
             success:false,
@@ -549,7 +616,7 @@ exports.getTaskByApp = CatchAsyncError(async(req,res,next)=>{
             message:"invalid input for app_Acronym"
         });
     }
-    console.log(req.body.app_Acronym);
+    // console.log(req.body.app_Acronym);
     const result = await TaskRepository.getTaskByApp(req.body.app_Acronym);
     if(result.length == 0){
         return res.status(200).send({
@@ -653,6 +720,24 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
             message:"unauthrorized"
         });
     }
+
+    //check user status
+    const checkUserResult = await AccountRepository.getAccountByUsername(req.body.un);
+    if(!checkUserResult){
+        return res.status(500).send({
+            success:false,
+            message:"not authorized"
+        })
+    }
+    else{
+        if(checkUserResult[0].status == 0){
+            return res.status(500).send({
+                success:false,
+                message:"not authorized"
+            })
+        }
+    }
+
     const checkGroupR = await checkGroup(req.body.un, req.body.gn);
     if(!checkGroupR){
         return res.status(500).send({
@@ -746,7 +831,7 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
         });
     }
     catch(err){
-        console.log(err);
+        // console.log(err);
         return res.status(500).send({
             success:false,
             message:"error in updating task",
@@ -765,6 +850,23 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
             success:false,
             message:"unauthrorized"
         });
+    }
+
+    //check user status
+    const checkUserResult = await AccountRepository.getAccountByUsername(req.body.un);
+    if(!checkUserResult){
+        return res.status(500).send({
+            success:false,
+            message:"not authorized"
+        })
+    }
+    else{
+        if(checkUserResult[0].status == 0){
+            return res.status(500).send({
+                success:false,
+                message:"not authorized"
+            })
+        }
     }
     const checkGroupR = await checkGroup(req.body.un, req.body.gn);
     if(!checkGroupR){
@@ -865,7 +967,7 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
     taskNotes = taskNotes.concat("||", tempSystemNotes);
     //User add notes if exist 
     if(req.body.userNotes){
-        console.log(req.body.userNotes);
+        //console.log(req.body.userNotes);
         tempUserNotes = req.body.un + "|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + req.body.userNotes;
         taskNotes = taskNotes.concat("||", tempUserNotes);
     }
@@ -873,7 +975,7 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
 
     //Update task
     try{
-        console.log(taskNotes, req.body.un, req.body.taskId, req.body.taskState);
+        //console.log(taskNotes, req.body.un, req.body.taskId, req.body.taskState);
         //Set task plan
         let taskPlan
         if(!req.body.taskPlan){
@@ -908,12 +1010,28 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
 //INPUT: taskId, un, gn, taskState, userNotes
 exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
     //checkgroup
-    console.log(req.body.un, req.body.gn)
     if(!req.body.un || !req.body.gn){
         return res.status(500).send({
             success:false,
             message:"unauthrorized"
         });
+    }
+
+    //check user status
+    const checkUserResult = await AccountRepository.getAccountByUsername(req.body.un);
+    if(!checkUserResult){
+        return res.status(500).send({
+            success:false,
+            message:"not authorized"
+        })
+    }
+    else{
+        if(checkUserResult[0].status == 0){
+            return res.status(500).send({
+                success:false,
+                message:"not authorized"
+            })
+        }
     }
     const checkGroupR = await checkGroup(req.body.un, req.body.gn);
     if(!checkGroupR){
@@ -997,7 +1115,7 @@ exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
             if(appResult[0].App_Acronym){
                 //2. Get all users email based on App permit Done
                 const allUsersEmail = await GroupRepository.getAllUserEmailByGroupName(appResult[0].App_permit_Done);
-                console.log(allUsersEmail);
+                //console.log(allUsersEmail);
                 //send email if not null
                 for(const k in allUsersEmail){
                     if(allUsersEmail[k] !== null){
@@ -1013,7 +1131,7 @@ exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
                             const sendMailResult = await nodemail(mailDetails);
                         }
                         catch(err){
-                            console.log(err)
+                            //console.log(err)
                         }
                         //clear mailDetails
                         mailDetails = null;
@@ -1036,7 +1154,7 @@ exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
         })
     }
     catch(err){
-        console.log(err);
+        //console.log(err);
         return res.status(500).send({
             success:false,
             message:"error in updating task",
@@ -1047,10 +1165,40 @@ exports.teamUpdateTask = CatchAsyncError(async(req,res,next)=>{
 });
 
 //POST : PL update application || URL : /update/application || Checkgroup
-//INPUT: acronym, description, endDate, permitCreate(optional), permitOpen(optional), permitTodo(optional), permitDoing(optional), permitDone(optional)
+//INPUT: acronym, description, endDate, permitCreate(optional), permitOpen(optional), permitTodo(optional), permitDoing(optional), permitDone(optional), un, gn
 exports.plUpdateApp = CatchAsyncError(async(req,res,next)=>{
     //checkgroup
+    if(!req.body.un || !req.body.gn){
+        return res.status(500).send({
+            success:false,
+            message:"not authorized"
+        })
+    }
 
+    //check user status
+    const checkUserResult = await AccountRepository.getAccountByUsername(req.body.un);
+    if(!checkUserResult){
+        return res.status(500).send({
+            success:false,
+            message:"not authorized"
+        })
+    }
+    else{
+        if(checkUserResult[0].status == 0){
+            return res.status(500).send({
+                success:false,
+                message:"not authorized"
+            })
+        }
+    }
+
+    const checkGroupR = await checkGroup(req.body.un, req.body.gn);
+    if(!checkGroupR){
+        return res.status(500).send({
+            success:false,
+            message:"unauthrorized"
+        });
+    }
 
     //fields require to be change
     var newCreate, newOpen, newTodo, newDoing, newDone
@@ -1171,7 +1319,7 @@ exports.plUpdateApp = CatchAsyncError(async(req,res,next)=>{
         });
 
     }catch(err){
-        console.log(err);
+        //console.log(err);
         return res.status(200).send({
             success:false,
             message:"error in updating application",
