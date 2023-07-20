@@ -287,8 +287,8 @@ exports.createPlan = CatchAsyncError(async(req,res,next)=>{
                 });
             }
             appAcronym = req.body.appAcronym;
-            startDate = tempAppStartDate;
-            endDate = tempAppEndDate;
+            startDate = tempStartDate;
+            endDate = tempEndDate;
         }
         catch(err){
             return res.status(500).send({
@@ -805,6 +805,7 @@ exports.plUpdateTask = CatchAsyncError(async(req,res,next)=>{
     //System generate notes
     var today = new Date()
     var updateStateNotes = "UPDATED TASK STATE:" + req.body.taskState + " USER:" + req.body.un;
+    if(newPlan != null) updateStateNotes += " PLAN: " + newPlan;
     var tempSystemNotes = "system|" + taskResult[0].Task_state + "|" + today.toISOString() + "|" + updateStateNotes;
     taskNotes += "||" + tempSystemNotes;
 
@@ -953,6 +954,14 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
         }
 
     }
+    //Set task plan
+    let taskPlan
+    if(!req.body.taskPlan){
+        taskPlan = null;
+    }
+    else{
+        taskPlan = req.body.taskPlan;
+    }
 
     //Notes 
     //System generate notes
@@ -960,6 +969,7 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
     //System generate notes
     var today = new Date()
     updateStateNotes = "UPDATED TASK STATE:" + req.body.taskState + " USER:" + req.body.un;
+    if (taskPlan != null) updateStateNotes += " PLAN: " + taskPlan;
     if(req.body.taskPlan != taskResult[0].Task_plan){
         updateStateNotes.concat("|Update task plan:", req.body.taskPlan);
     }
@@ -976,14 +986,6 @@ exports.pmUpdateTask = CatchAsyncError(async(req,res,next)=>{
     //Update task
     try{
         //console.log(taskNotes, req.body.un, req.body.taskId, req.body.taskState);
-        //Set task plan
-        let taskPlan
-        if(!req.body.taskPlan){
-            taskPlan = null;
-        }
-        else{
-            taskPlan = req.body.taskPlan;
-        }
         const result = await TaskRepository.updateTask(taskNotes, taskPlan, req.body.un, req.body.taskId, req.body.taskState);
         if(result){
             return res.status(200).send({
